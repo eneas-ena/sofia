@@ -40,7 +40,7 @@ html{font-size:100%;-webkit-text-size-adjust:100%}
 body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;background:var(--fundo);color:var(--texto);font-size:1rem;line-height:1.5;-webkit-font-smoothing:antialiased}
 button{font:inherit;color:inherit}
 :focus-visible{outline:3px solid var(--primaria);outline-offset:2px}
-h1:focus,h2:focus{outline:none}
+h1:focus,h2:focus,[tabindex="-1"]:focus{outline:none}
 
 /* ===================== LAYOUT ===================== */
 .app{max-width:480px;margin:0 auto;min-height:100vh;min-height:100dvh}
@@ -99,11 +99,17 @@ h1:focus,h2:focus{outline:none}
 .incorreta .selo{color:var(--erro)}
 
 /* ===================== CAMPOS ===================== */
-.campo{margin-top:8px}
+.campo{margin-top:16px}
 .campo label{display:block;margin-bottom:8px}
 .campo input{width:100%;min-height:56px;padding:12px 16px;border:1px solid var(--borda);border-radius:12px;background:var(--superficie);color:var(--texto);font:inherit;font-size:1rem}
 .campo input:focus{outline:none;border:2px solid var(--primaria);padding:11px 15px}
+.campo input.pin{letter-spacing:.5em;font-size:1.25rem;font-weight:600}
 .ajuda{margin-top:16px}
+
+/* ===================== MENSAGENS ===================== */
+.caixa-erro{display:flex;gap:8px;align-items:flex-start;background:var(--erro-suave);color:var(--texto);border:2px solid var(--erro);border-radius:12px;padding:12px 16px;margin-bottom:12px}
+.caixa-erro svg{color:var(--erro);flex-shrink:0;margin-top:2px}
+.aviso{color:var(--erro);font-weight:600;margin-top:8px;display:flex;gap:6px;align-items:center}
 
 /* ===================== ETIQUETA / CARTÕES ===================== */
 .etiqueta{display:inline-block;background:var(--destaque);color:var(--rotulo);font-size:.875rem;line-height:1.25rem;padding:4px 12px;border-radius:8px;margin:16px 0 8px}
@@ -120,6 +126,7 @@ h1:focus,h2:focus{outline:none}
 .dupla .cartao-conquista{align-items:flex-start}
 .numero{font-size:1.5rem;font-weight:700;line-height:2rem}
 .icone-ok{color:var(--sucesso)}
+.usuario-grande{font-size:2rem;font-weight:700;line-height:2.5rem;color:var(--texto);margin:4px 0;word-break:break-all}
 
 /* ===================== SEMANA ===================== */
 .semana{display:flex;justify-content:space-between;gap:4px;margin-top:12px;list-style:none}
@@ -134,11 +141,14 @@ h1:focus,h2:focus{outline:none}
 .materia .cab{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
 .materia .pct{font-size:.875rem;color:var(--texto2);white-space:nowrap}
 
-/* ===================== BOAS-VINDAS ===================== */
+/* ===================== BOAS-VINDAS / CARREGANDO ===================== */
 .centro{text-align:center;margin-top:24px}
 .logo{width:96px;height:96px;border-radius:50%;background:var(--primaria);color:var(--sobre-primaria);font-size:3rem;font-weight:700;display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
 .nome-app{font-size:2.25rem;font-weight:700;line-height:2.75rem}
 .slogan{color:var(--primaria);font-size:1.125rem;font-weight:600;line-height:1.75rem;margin:12px 0}
+.carregando{justify-content:center;align-items:center;text-align:center}
+.pulso{animation:pulso 1.2s ease-in-out infinite}
+@keyframes pulso{50%{opacity:.5}}
 
 /* ===================== NAVEGAÇÃO INFERIOR ===================== */
 .nav{position:fixed;bottom:0;left:0;right:0;background:var(--superficie);border-top:1px solid var(--borda);display:flex;justify-content:center;padding-bottom:env(safe-area-inset-bottom);z-index:5}
@@ -148,23 +158,29 @@ h1:focus,h2:focus{outline:none}
 
 .versao{text-align:center;font-size:.875rem;color:var(--texto2);margin-top:16px}
 .so-leitor{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
 <body>
-<div id="app" class="app" aria-live="off"></div>
+<div id="app" class="app"></div>
 
 <script>
 (function () {
 'use strict';
 
 /* =========================================================
-   SOFIA — Etapa 1 (telas e navegação com dados de exemplo)
-   Ainda sem banco de dados e sem IA.
+   SOFIA — Etapa 2 (cadastro, PIN e dados no Supabase)
    ========================================================= */
-const VERSAO = '0.1.0';
-const CHAVE_LOCAL = 'sofia_demo_v1';   // só para a demonstração (Etapa 2 troca pelo Supabase)
+const VERSAO = '0.2.0';
+
+/* ---------- Supabase (já preenchido) ---------- */
+const SUPABASE_URL   = 'https://ghjbljypxksubmcsvaig.supabase.co';
+const SUPABASE_CHAVE = 'sb_publishable_qXCYqg1WdmelY9D1mptZXg_U8NdoKby';
+const SCHEMA = 'sofia';
+
+const CHAVE_TOKEN = 'sofia_sessao';
 const CHAVE_TEMA = 'sofia_tema';
+try { localStorage.removeItem('sofia_demo_v1'); } catch (e) { } // limpa a demonstração da v0.1
 
 /* ---------- Ícones ---------- */
 const ICONES = {
@@ -189,7 +205,7 @@ function esc(s) {
 }
 const LETRAS = ['A', 'B', 'C', 'D'];
 
-/* ---------- Dados de exemplo: cadastro ---------- */
+/* ---------- Cadastro ---------- */
 const PERG_CAD = [
   { chave: 'nome', tipo: 'texto', rotulo: 'Seu nome',
     fala: function () { return 'Oi! Eu sou a Sofia. Como você gosta de ser chamada?'; },
@@ -209,10 +225,13 @@ const PERG_CAD = [
   { chave: 'adaptacao', rotulo: 'Adaptações', opcional: true,
     fala: function () { return 'Tem algo que me ajude a ensinar do seu jeito?'; },
     opcoes: ['Não preciso', 'Textos mais curtos', 'Mais exemplos e imagens', 'Letra maior'],
-    ajuda: 'Pergunta opcional. Você pode pular.' }
+    ajuda: 'Pergunta opcional. Você pode pular.' },
+  { chave: 'pin', tipo: 'pin', rotulo: 'PIN',
+    fala: function () { return 'Por último, crie um PIN de 4 números. Ele é a sua senha para entrar no app.'; },
+    ajuda: 'Evite números fáceis, como 1234 ou a sua data de aniversário. Não conte o PIN para ninguém.' }
 ];
 
-/* ---------- Dados de exemplo: diagnóstico (questões autorais) ---------- */
+/* ---------- Diagnóstico (questões autorais) ---------- */
 const AREAS = ['Matemática', 'Biologia', 'Química', 'Física', 'Linguagens', 'Ciências Humanas'];
 const DIAG = [
   { area: 'Matemática', assunto: 'Porcentagem',
@@ -247,7 +266,7 @@ const DIAG = [
     alts: ['7,0', '8,0', '30,0', '7,5'], correta: 3 }
 ];
 
-/* ---------- Dados de exemplo: aula ---------- */
+/* ---------- Aula de exemplo (a IA entra na Etapa 4) ---------- */
 const AULA = {
   materia: 'Biologia', assunto: 'Citologia',
   duracao: '40 min · revisão, explicação e 5 questões',
@@ -304,19 +323,75 @@ function proximoAssunto() {
   const p = PLANO[idxSemana(d)];
   return p ? 'Amanhã: ' + p + '.' : 'Amanhã é domingo, dia de descanso. Na segunda: ' + PLANO[0] + '.';
 }
+/* Sequência de dias: domingo sem estudo não quebra a sequência */
+function calcularSequencia(dias) {
+  const set = new Set(dias || []);
+  const d = new Date();
+  if (!set.has(isoLocal(d))) d.setDate(d.getDate() - 1);
+  let n = 0;
+  for (let k = 0; k < 400; k++) {
+    if (set.has(isoLocal(d))) n++;
+    else if (d.getDay() !== 0) break;
+    d.setDate(d.getDate() - 1);
+  }
+  return n;
+}
+function textoSequencia(n) { return n === 1 ? '1 dia seguido' : n + ' dias seguidos'; }
 
-/* ---------- Estado (demonstração local) ---------- */
-function novoEstado() { return { perfil: null, niveis: null, acertosDiag: 0, streak: 5, aulas: 0, ultimaAula: null, subiuHoje: null, acertosUltima: 0 }; }
-function carregar() { try { const t = localStorage.getItem(CHAVE_LOCAL); return t ? JSON.parse(t) : null; } catch (e) { return null; } }
-function salvar() { try { localStorage.setItem(CHAVE_LOCAL, JSON.stringify(S)); } catch (e) { } }
+/* =================== CONEXÃO COM O SUPABASE =================== */
+async function rpc(nome, params) {
+  let r;
+  try {
+    r = await fetch(SUPABASE_URL + '/rest/v1/rpc/' + nome, {
+      method: 'POST',
+      headers: { 'apikey': SUPABASE_CHAVE, 'Content-Type': 'application/json', 'Content-Profile': SCHEMA, 'Accept-Profile': SCHEMA },
+      body: JSON.stringify(params || {})
+    });
+  } catch (e) {
+    throw new Error('Sem conexão com a internet. Confira e tente de novo.');
+  }
+  let dados = null;
+  try { dados = await r.json(); } catch (e) { }
+  if (!r.ok) {
+    console.error('Sofia:', nome, r.status, dados);
+    throw new Error('Não consegui falar com o servidor (erro ' + r.status + '). Tente de novo daqui a pouco.');
+  }
+  if (dados && dados.erro) {
+    const e = new Error(dados.erro === 'sessao' ? 'Sua sessão terminou. Entre de novo com seu usuário e PIN.' : dados.erro);
+    e.codigo = dados.erro;
+    throw e;
+  }
+  return dados;
+}
+function lerToken() { try { return localStorage.getItem(CHAVE_TOKEN); } catch (e) { return null; } }
+function gravarToken(t) { try { localStorage.setItem(CHAVE_TOKEN, t); } catch (e) { } }
+function apagarToken() { try { localStorage.removeItem(CHAVE_TOKEN); } catch (e) { } }
 
-let S = carregar() || novoEstado();
-let tela = S.perfil ? (S.niveis ? 'inicio' : 'diagIntro') : 'boas';
+/* ---------- Estado ---------- */
+function novoEstado() { return { perfil: null, niveis: {}, diagFeito: false, acertosDiag: 0, aulas: 0, dias: [] }; }
+let S = novoEstado();
+let token = lerToken();
+let tela = 'carregando';
 let telaAnterior = null;
 let cad = { passo: 0, dados: {} };
+let ent = { usuario: '', pin: '', esqueci: false };
 let dg = { i: 0, resp: [], sel: null };
 let au = null;
 let veioDaAula = false;
+let acertosUltima = 0;
+let subiuHoje = null;
+let ocupado = false;
+let erroMsg = null;
+
+function aplicarDados(d) {
+  S.perfil = d.perfil || null;
+  S.niveis = d.niveis || {};
+  S.diagFeito = !!d.diagnostico_feito;
+  S.acertosDiag = d.acertos_diag || 0;
+  S.aulas = d.aulas_total || 0;
+  S.dias = d.dias || [];
+}
+async function carregarDados() { aplicarDados(await rpc('meus_dados', { p_token: token })); }
 
 /* ---------- Tema (sol/lua) ---------- */
 function temaInicial() {
@@ -338,9 +413,10 @@ function botaoTema() {
   const escuro = tema === 'dark';
   return '<button class="btn-icone" data-acao="tema" aria-label="' + (escuro ? 'Ativar modo claro' : 'Ativar modo escuro') + '">' + ic(escuro ? 'sol' : 'lua') + '</button>';
 }
-function topo(acaoVoltar, titulo, extra) {
-  return '<header class="topo"><button class="btn-icone btn-voltar" data-acao="' + acaoVoltar + '" aria-label="Voltar">' + ic('voltar') + '</button>' +
-    '<h1 class="subtitulo" tabindex="-1">' + titulo + '</h1>' + (extra || '') + '</header>';
+function topo(acaoVoltar, titulo) {
+  return '<header class="topo">' +
+    (acaoVoltar ? '<button class="btn-icone btn-voltar" data-acao="' + acaoVoltar + '" aria-label="Voltar">' + ic('voltar') + '</button>' : '') +
+    '<h1 class="subtitulo" tabindex="-1">' + titulo + '</h1></header>';
 }
 function barra(pct, rotulo) {
   pct = Math.max(0, Math.min(100, Math.round(pct)));
@@ -350,6 +426,14 @@ function balao(texto, id) {
   return '<div class="balao"' + (id ? ' id="' + id + '" tabindex="-1"' : '') + '><div class="avatar" aria-hidden="true">S</div>' +
     '<div class="balao-corpo"><span class="balao-nome">Sofia</span>' + texto + '</div></div>';
 }
+function caixaErro() {
+  return erroMsg ? '<div class="caixa-erro" id="erro" role="alert" tabindex="-1">' + ic('x', 20) + '<span>' + esc(erroMsg) + '</span></div>' : '';
+}
+function botao(acao, texto, tipo, desabilitado) {
+  const bloq = desabilitado || ocupado;
+  return '<button class="btn btn-' + (tipo || 'primario') + '" data-acao="' + acao + '"' + (bloq ? ' disabled' : '') + '>' +
+    (ocupado && tipo !== 'secundario' ? 'Aguarde…' : texto) + '</button>';
+}
 function versao() { return '<p class="versao">Sofia v' + VERSAO + '</p>'; }
 function nav(ativa) {
   return '<nav class="nav" aria-label="Navegação principal"><div class="nav-interno">' +
@@ -358,11 +442,28 @@ function nav(ativa) {
     '</div></nav>';
 }
 function linhaMateria(nome, pct, nota) {
+  pct = pct || 0;
   return '<div class="materia"><div class="cab"><span>' + esc(nome) + '</span><span class="pct">' + pct + '%' + (nota ? ' · ' + nota : '') + '</span></div>' + barra(pct, nome + ': ' + pct + '%') + '</div>';
+}
+function campoPin(id, rotulo, valor, auto) {
+  return '<div class="campo"><label for="' + id + '" class="legenda">' + rotulo + '</label>' +
+    '<input id="' + id + '" class="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="' + auto + '" value="' + esc(valor || '') + '"></div>';
 }
 
 /* =================== TELAS =================== */
 const TELAS = {};
+
+TELAS.carregando = function () {
+  return '<main class="tela carregando" aria-busy="true"><div class="logo pulso" aria-hidden="true">S</div>' +
+    '<h1 class="subtitulo" tabindex="-1">Carregando…</h1>' + versao() + '</main>';
+};
+
+TELAS.falha = function () {
+  return '<main class="tela"><div class="topo" style="justify-content:flex-end">' + botaoTema() + '</div>' +
+    '<div class="centro"><div class="logo" aria-hidden="true">S</div><h1 class="titulo" tabindex="-1">Não consegui abrir</h1></div>' +
+    balao(esc(erroMsg || 'Algo deu errado.')) +
+    '<div class="acoes">' + botao('tentarDeNovo', 'Tentar de novo') + versao() + '</div></main>';
+};
 
 /* 01 Boas-vindas */
 TELAS.boas = function () {
@@ -375,10 +476,23 @@ TELAS.boas = function () {
       '<p class="sec">Um plano de estudos do seu tamanho, uma aula curta por dia e correção que explica o seu erro. Tudo no celular.</p>' +
     '</div>' +
     '<div class="acoes">' +
-      '<button class="btn btn-primario" data-acao="comecar">Começar</button>' +
+      botao('comecar', 'Começar') +
       '<p class="legenda" style="text-align:center;margin-top:12px">Gratuito · leva cerca de 2 minutos</p>' +
+      '<button class="btn btn-secundario" data-acao="irEntrar" style="margin-top:16px">Já tenho cadastro</button>' +
       versao() +
     '</div></main>';
+};
+
+/* Entrar (usuário + PIN) */
+TELAS.entrar = function () {
+  const pode = ent.usuario.trim().length > 0 && /^\d{4}$/.test(ent.pin);
+  return '<main class="tela">' + topo('entrarVoltar', 'Entrar') +
+    balao('Que bom te ver de novo! Digite o seu usuário e o seu PIN.') +
+    '<div class="campo"><label for="campo-usuario" class="legenda">Usuário</label>' +
+      '<input id="campo-usuario" type="text" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" maxlength="40" value="' + esc(ent.usuario) + '"></div>' +
+    campoPin('campo-pin-entrar', 'PIN (4 números)', ent.pin, 'current-password') +
+    (ent.esqueci ? balao('Sem problema! Peça ao responsável pelo app para criar um PIN novo para você.') : '<button class="btn-link" data-acao="esqueciPin">Esqueci meu PIN</button>') +
+    '<div class="acoes">' + caixaErro() + botao('entrar', 'Entrar', 'primario', !pode) + '</div></main>';
 };
 
 /* 02 Cadastro */
@@ -389,36 +503,56 @@ TELAS.cadastro = function () {
   if (p.tipo === 'texto') {
     corpo = '<div class="campo"><label for="campo-nome" class="legenda">Seu primeiro nome</label>' +
       '<input id="campo-nome" type="text" autocomplete="given-name" autocapitalize="words" maxlength="30" enterkeyhint="next" value="' + esc(valor || '') + '"></div>';
+  } else if (p.tipo === 'pin') {
+    corpo = campoPin('campo-pin', 'Crie o seu PIN', d.pin, 'new-password') +
+      campoPin('campo-pin2', 'Digite o PIN de novo', d.pin2, 'new-password') +
+      '<p class="aviso" id="aviso-pin" role="status">' + avisoPin() + '</p>';
   } else {
     corpo = '<div class="opcoes" role="radiogroup" aria-label="' + esc(p.rotulo) + '">' +
       p.opcoes.map(function (o) {
         return '<button class="opcao" role="radio" aria-checked="' + (valor === o) + '" data-acao="cadOpcao" data-valor="' + esc(o) + '"><span class="txt">' + esc(o) + '</span></button>';
       }).join('') + '</div>';
   }
-  const pode = cadPodeSeguir();
-  const rotuloBtn = (p.opcional && !valor) ? 'Pular' : (cad.passo === total - 1 ? 'Concluir' : 'Continuar');
+  const ultimo = cad.passo === total - 1;
+  const rotuloBtn = (p.opcional && !valor) ? 'Pular' : (ultimo ? 'Criar minha conta' : 'Continuar');
   return '<main class="tela">' + topo('cadVoltar', 'Seu perfil') +
     '<p class="legenda">Pergunta ' + (cad.passo + 1) + ' de ' + total + (p.opcional ? ' · opcional' : '') + '</p>' +
     barra((cad.passo + 1) / total * 100, 'Progresso do cadastro') +
     balao(p.fala(d)) + corpo +
     '<p class="legenda ajuda">' + esc(p.ajuda) + '</p>' +
-    '<div class="acoes"><button class="btn btn-primario" data-acao="cadContinuar"' + (pode ? '' : ' disabled') + '>' + rotuloBtn + '</button></div>' +
+    '<div class="acoes">' + caixaErro() + botao('cadContinuar', rotuloBtn, 'primario', !cadPodeSeguir()) + '</div>' +
     '</main>';
 };
+function avisoPin() {
+  const d = cad.dados;
+  if (d.pin && d.pin2 && d.pin.length === 4 && d.pin2.length === 4 && d.pin !== d.pin2) return ic('x', 18) + 'Os dois PINs não são iguais.';
+  return '';
+}
 function cadPodeSeguir() {
-  const p = PERG_CAD[cad.passo], v = cad.dados[p.chave];
+  const p = PERG_CAD[cad.passo], d = cad.dados, v = d[p.chave];
   if (p.opcional) return true;
   if (p.tipo === 'texto') return !!(v && v.trim());
+  if (p.tipo === 'pin') return /^\d{4}$/.test(d.pin || '') && d.pin === d.pin2;
   return !!v;
 }
+
+/* Conta criada: mostra o usuário */
+TELAS.contaCriada = function () {
+  return '<main class="tela">' +
+    '<div class="topo" style="justify-content:flex-end">' + botaoTema() + '</div>' +
+    '<h1 class="titulo" tabindex="-1">Conta criada!</h1>' +
+    balao('Anote o seu usuário junto com o seu PIN. Com os dois você entra no app em qualquer celular.') +
+    '<section class="cartao cartao-destaque"><p class="rotulo">SEU USUÁRIO</p><p class="usuario-grande">' + esc(S.perfil.usuario) + '</p></section>' +
+    '<div class="acoes">' + botao('irDiagIntro', 'Continuar') + '</div></main>';
+};
 
 /* Diagnóstico — apresentação */
 TELAS.diagIntro = function () {
   const nome = S.perfil ? esc(S.perfil.nome) : '';
-  return '<main class="tela">' + topo('diagIntroVoltar', 'Diagnóstico') +
+  return '<main class="tela">' + topo(null, 'Diagnóstico') +
     balao('Agora quero conhecer o que você já sabe, ' + nome + '. São 10 questões rápidas de várias matérias, uma por vez e sem cronômetro.') +
     balao('Se não souber alguma, toque em <strong>Ainda não sei</strong>. Isso me ajuda tanto quanto um acerto, e não vale nota de nada.') +
-    '<div class="acoes"><button class="btn btn-primario" data-acao="diagIniciar">Começar diagnóstico</button></div></main>';
+    '<div class="acoes">' + botao('diagIniciar', 'Começar diagnóstico') + '</div></main>';
 };
 
 /* 03 Diagnóstico */
@@ -436,9 +570,9 @@ TELAS.diag = function () {
     '<p class="enunciado" id="enunciado">' + esc(q.enunciado) + '</p>' +
     '<p class="legenda">Questão autoral no estilo ENEM</p>' +
     '<div class="opcoes" role="radiogroup" aria-labelledby="enunciado">' + alts + '</div>' +
-    '<div class="acoes">' +
-      '<button class="btn btn-primario" data-acao="diagConfirmar"' + (dg.sel === null ? ' disabled' : '') + '>Confirmar resposta</button>' +
-      '<button class="btn btn-secundario" data-acao="diagNaoSei">Ainda não sei</button>' +
+    '<div class="acoes">' + caixaErro() +
+      botao('diagConfirmar', 'Confirmar resposta', 'primario', dg.sel === null) +
+      botao('diagNaoSei', 'Ainda não sei', 'secundario') +
     '</div></main>';
 };
 
@@ -450,47 +584,51 @@ TELAS.diagResultado = function () {
     '<p class="sec">Você acertou ' + S.acertosDiag + ' de ' + DIAG.length + ' questões.</p>' +
     balao('Obrigada, ' + esc(S.perfil.nome) + '! Agora sei por onde começar. Isso não é nota do ENEM: é só um ponto de partida, e eu vou ajustando a cada aula.') +
     '<h2 class="subtitulo" style="margin-top:8px">Seu ponto de partida</h2>' + linhas +
-    '<div class="acoes"><button class="btn btn-primario" data-acao="irInicio">Ir para o início</button></div></main>';
+    '<div class="acoes">' + botao('irInicio', 'Ir para o início') + '</div></main>';
 };
 
 /* 04 Início */
 TELAS.inicio = function () {
-  const agora = new Date(), hi = idxSemana(agora), feitaHoje = S.ultimaAula === hojeISO();
+  const agora = new Date(), hi = idxSemana(agora);
+  const feitos = new Set(S.dias), feitaHoje = feitos.has(hojeISO());
   const segunda = new Date(agora); segunda.setDate(agora.getDate() - hi);
+  const seq = calcularSequencia(S.dias);
 
   let semana = '';
   for (let k = 0; k < 6; k++) {
     const dia = new Date(segunda); dia.setDate(segunda.getDate() + k);
-    let cls = '', conteudo = '', estado = 'ainda não chegou';
-    if (k < hi || (k === hi && feitaHoje)) { cls = 'feito'; conteudo = ic('check', 20); estado = 'estudado'; }
+    const iso = isoLocal(dia);
+    let cls = '', conteudo = '', estado;
+    if (feitos.has(iso)) { cls = 'feito'; conteudo = ic('check', 20); estado = 'estudado'; }
     else if (k === hi) { cls = 'hoje'; conteudo = dia.getDate(); estado = 'hoje'; }
+    else estado = k < hi ? 'sem estudo' : 'ainda não chegou';
     semana += '<li class="dia' + (k === hi ? ' hoje' : '') + '" aria-label="' + DIAS_LONGOS[k] + ', ' + estado + '">' +
       '<span class="bola ' + cls + '" aria-hidden="true">' + conteudo + '</span><span aria-hidden="true">' + DIAS_CURTOS[k] + '</span></li>';
   }
 
   let cartaoAula;
-  if (hi === 6) {
+  if (hi === 6 && !feitaHoje) {
     cartaoAula = '<section class="cartao cartao-destaque"><p class="rotulo">HOJE</p><h2 class="titulo">Dia de descanso</h2>' +
       '<p class="sec">Descansar também faz parte do estudo. Amanhã: ' + PLANO[0] + '.</p></section>';
   } else if (feitaHoje) {
-    cartaoAula = '<section class="cartao cartao-destaque"><p class="rotulo">AULA DE HOJE</p><h2 class="titulo">Aula concluída ' + '<span class="icone-ok">' + ic('check', 22) + '</span></h2>' +
+    cartaoAula = '<section class="cartao cartao-destaque"><p class="rotulo">AULA DE HOJE</p><h2 class="titulo">Aula concluída <span class="icone-ok">' + ic('check', 22) + '</span></h2>' +
       '<p class="sec" style="margin-bottom:16px">' + proximoAssunto() + '</p>' +
-      '<button class="btn btn-secundario" data-acao="aulaIniciar">Refazer a aula (demonstração)</button></section>';
+      botao('aulaIniciar', 'Refazer a aula', 'secundario') + '</section>';
   } else {
     cartaoAula = '<section class="cartao cartao-destaque"><p class="rotulo">AULA DE HOJE</p>' +
       '<h2 class="titulo">' + AULA.materia + ' · ' + AULA.assunto + '</h2>' +
       '<p class="info-linha">' + ic('relogio', 20) + '<span>' + AULA.duracao + '</span></p>' +
-      '<button class="btn btn-primario" data-acao="aulaIniciar">Começar aula de hoje</button></section>';
+      botao('aulaIniciar', 'Começar aula de hoje') + '</section>';
   }
 
-  const ano = (S.perfil.ano || '').replace('ENEM ', '');
-  const fase = ano === '2026' ? 'Fase 1: conhecer a prova do ENEM 2026.' : 'Fase 2: preparação para o ENEM ' + esc(ano) + '.';
+  const ano = S.perfil.ano_enem;
+  const fase = ano === 2026 ? 'Fase 1: conhecer a prova do ENEM 2026.' : 'Fase 2: preparação para o ENEM ' + esc(ano || '') + '.';
 
   return '<main class="tela com-nav">' +
     '<header class="cab-inicio"><div><h1 class="titulo" tabindex="-1">Olá, ' + esc(S.perfil.nome) + '!</h1>' +
       '<p class="sec">' + dataExtenso(agora) + '</p></div>' + botaoTema() + '</header>' +
     '<section class="cartao cartao-conquista">' + ic('chama') +
-      '<div><p class="subtitulo">' + S.streak + ' dias seguidos</p><p class="legenda">Domingo de descanso não quebra a sequência</p></div></section>' +
+      '<div><p class="subtitulo">' + (seq > 0 ? textoSequencia(seq) : 'Comece hoje a sua sequência') + '</p><p class="legenda">Domingo de descanso não quebra a sequência</p></div></section>' +
     cartaoAula +
     '<h2 class="subtitulo" style="margin-top:24px">Sua semana</h2>' +
     '<ul class="semana">' + semana + '</ul>' +
@@ -520,9 +658,9 @@ TELAS.aula = function () {
   const extras = au.extras.map(function (t) { return balao(esc(t)); }).join('');
 
   let principal;
-  if (!au.respondida) principal = '<button class="btn btn-primario" data-acao="aulaConfirmar"' + (au.sel === null ? ' disabled' : '') + '>Confirmar resposta</button>';
-  else if (au.i < n - 1) principal = '<button class="btn btn-primario" data-acao="aulaProxima">Próxima questão</button>';
-  else principal = '<button class="btn btn-primario" data-acao="aulaConcluir">Concluir aula</button>';
+  if (!au.respondida) principal = botao('aulaConfirmar', 'Confirmar resposta', 'primario', au.sel === null);
+  else if (au.i < n - 1) principal = botao('aulaProxima', 'Próxima questão');
+  else principal = botao('aulaConcluir', 'Concluir aula');
 
   return '<main class="tela">' + topo('aulaVoltar', AULA.materia + ' · ' + AULA.assunto) +
     '<p class="legenda">Questão ' + (au.i + 1) + ' de ' + n + ' · autoral, estilo ENEM</p>' +
@@ -531,37 +669,39 @@ TELAS.aula = function () {
     '<p class="enunciado" id="enunciado" style="margin-top:16px">' + esc(q.enunciado) + '</p>' +
     '<div class="opcoes" role="radiogroup" aria-labelledby="enunciado">' + alts + '</div>' +
     '<div aria-live="polite">' + retorno + extras + '</div>' +
-    '<div class="acoes"><div class="linha-btns">' +
-      '<button class="btn btn-secundario" data-acao="aulaNaoEntendi">Não entendi</button>' +
-      '<button class="btn btn-secundario" data-acao="aulaOutroExemplo">Outro exemplo</button>' +
+    '<div class="acoes">' + caixaErro() + '<div class="linha-btns">' +
+      botao('aulaNaoEntendi', 'Não entendi', 'secundario') +
+      botao('aulaOutroExemplo', 'Outro exemplo', 'secundario') +
     '</div>' + principal + '</div></main>';
 };
 
 /* 06 Progresso */
 TELAS.progresso = function () {
   const n = AULA.questoes.length;
-  const subiu = S.subiuHoje === hojeISO();
+  const subiu = subiuHoje === hojeISO();
+  const seq = calcularSequencia(S.dias);
   const linhas = AREAS.map(function (a) {
     return linhaMateria(a, S.niveis[a], (a === AULA.materia && subiu) ? 'subiu hoje' : '');
   }).join('');
 
-  let cab, cartoes, fala;
+  let cab, cartao1, fala;
   if (veioDaAula) {
     cab = '<header class="cab-inicio"><div><h1 class="titulo" tabindex="-1">Aula concluída!</h1><p class="sec">' + AULA.materia + ' · ' + AULA.assunto + ' · hoje</p></div>' + botaoTema() + '</header>';
-    cartoes = '<div class="cartao"><span class="icone-ok">' + ic('check') + '</span><span class="numero">' + S.acertosUltima + ' de ' + n + '</span><span class="legenda">questões certas</span></div>';
-    fala = (S.acertosUltima >= 3 ? 'Você avançou em ' + AULA.assunto + '! ' : 'Hoje foi um bom treino, e errar faz parte de aprender. Vou revisar isso com você. ') + proximoAssunto();
+    cartao1 = '<div class="cartao"><span class="icone-ok">' + ic('check') + '</span><span class="numero">' + acertosUltima + ' de ' + n + '</span><span class="legenda">questões certas</span></div>';
+    fala = (acertosUltima >= 3 ? 'Você avançou em ' + AULA.assunto + '! ' : 'Hoje foi um bom treino, e errar faz parte de aprender. Vou revisar isso com você. ') + proximoAssunto();
   } else {
     cab = '<header class="cab-inicio"><div><h1 class="titulo" tabindex="-1">Seu progresso</h1><p class="sec">Você comparada a você mesma</p></div>' + botaoTema() + '</header>';
-    cartoes = '<div class="cartao"><span class="icone-ok">' + ic('check') + '</span><span class="numero">' + S.aulas + '</span><span class="legenda">' + (S.aulas === 1 ? 'aula concluída' : 'aulas concluídas') + '</span></div>';
-    fala = S.ultimaAula === hojeISO() ? 'Aula de hoje concluída. ' + proximoAssunto() : 'Continue no seu ritmo. Hoje: ' + AULA.materia + ' · ' + AULA.assunto + '.';
+    cartao1 = '<div class="cartao"><span class="icone-ok">' + ic('check') + '</span><span class="numero">' + S.aulas + '</span><span class="legenda">' + (S.aulas === 1 ? 'aula concluída' : 'aulas concluídas') + '</span></div>';
+    fala = new Set(S.dias).has(hojeISO()) ? 'Aula de hoje concluída. ' + proximoAssunto() : 'Continue no seu ritmo. Hoje: ' + AULA.materia + ' · ' + AULA.assunto + '.';
   }
   return '<main class="tela com-nav">' + cab +
-    '<div class="dupla">' + cartoes +
-      '<div class="cartao cartao-conquista">' + ic('chama') + '<span class="numero">' + S.streak + ' dias</span><span class="legenda">seguidos</span></div></div>' +
+    '<div class="dupla">' + cartao1 +
+      '<div class="cartao cartao-conquista">' + ic('chama') + '<span class="numero">' + seq + (seq === 1 ? ' dia' : ' dias') + '</span><span class="legenda">seguidos</span></div></div>' +
     balao(esc(fala)) +
     '<h2 class="subtitulo" style="margin-top:8px">Sua evolução</h2>' +
     '<p class="legenda">Você comparada a você mesma, sem rankings</p>' + linhas +
-    '<button class="btn-link" data-acao="reiniciar">Reiniciar demonstração</button>' +
+    '<p class="legenda" style="text-align:center;margin-top:24px">Usuário: <strong>' + esc(S.perfil.usuario) + '</strong></p>' +
+    '<button class="btn-link" data-acao="sair" style="margin-top:0">Sair desta conta</button>' +
     versao() + '</main>' + nav('progresso');
 };
 
@@ -576,16 +716,37 @@ function calcularNiveis(resp) {
   AREAS.forEach(function (a) { niv[a] = tot[a] ? Math.round((ac[a] || 0) / tot[a] * 100) : 0; });
   return { niveis: niv, acertos: total };
 }
+function ir(t, msg) { tela = t; erroMsg = msg || null; render(); }
+
+/* Executa uma tarefa que fala com o servidor, mostrando "Aguarde…" e os erros */
+async function executar(tarefa) {
+  if (ocupado) return;
+  ocupado = true; erroMsg = null; render();
+  try {
+    await tarefa();
+    ocupado = false; render();
+  } catch (e) {
+    ocupado = false;
+    if (e.codigo === 'sessao') { apagarToken(); token = null; ent = { usuario: '', pin: '', esqueci: false }; ir('entrar', e.message); render('#erro'); return; }
+    erroMsg = e.message || 'Algo deu errado.';
+    render('#erro');
+  }
+}
+
+async function finalizarDiag() {
+  const r = calcularNiveis(dg.resp);
+  await executar(async function () {
+    await rpc('salvar_diagnostico', { p_token: token, p_respostas: dg.resp.map(function (x) { return x == null ? null : x; }), p_acertos: r.acertos, p_niveis: r.niveis });
+    S.niveis = r.niveis; S.acertosDiag = r.acertos; S.diagFeito = true;
+    ir('diagResultado');
+  });
+}
 function avancarDiag() {
+  if (dg.i >= DIAG.length - 1) { finalizarDiag(); return; }
   dg.i++;
   dg.sel = dg.resp[dg.i] != null ? dg.resp[dg.i] : null;
-  if (dg.i >= DIAG.length) {
-    const r = calcularNiveis(dg.resp);
-    S.niveis = r.niveis; S.acertosDiag = r.acertos; salvar();
-    ir('diagResultado');
-  } else render();
+  telaAnterior = null; render();
 }
-function ir(t) { tela = t; render(); }
 
 const ACOES = {
   tema: function () {
@@ -593,29 +754,47 @@ const ACOES = {
     try { localStorage.setItem(CHAVE_TEMA, tema); } catch (e) { }
     aplicarTema(); render('[data-acao="tema"]');
   },
+  tentarDeNovo: function () { iniciar(); },
   comecar: function () { cad = { passo: 0, dados: {} }; ir('cadastro'); },
+  irEntrar: function () { ent = { usuario: '', pin: '', esqueci: false }; ir('entrar'); },
+  entrarVoltar: function () { ir('boas'); },
+  esqueciPin: function () { ent.esqueci = true; render(); },
+  entrar: function () {
+    if (!(ent.usuario.trim() && /^\d{4}$/.test(ent.pin))) return;
+    executar(async function () {
+      const r = await rpc('entrar', { p_usuario: ent.usuario.trim(), p_pin: ent.pin });
+      token = r.token; gravarToken(token); ent.pin = '';
+      await carregarDados();
+      ir(S.diagFeito ? 'inicio' : 'diagIntro');
+    });
+  },
 
   cadOpcao: function (v) { cad.dados[PERG_CAD[cad.passo].chave] = v; render('[data-acao="cadOpcao"][aria-checked="true"]'); },
   cadContinuar: function () {
     if (!cadPodeSeguir()) return;
-    if (cad.passo < PERG_CAD.length - 1) { cad.passo++; telaAnterior = null; render(); }
-    else {
-      const d = cad.dados;
-      S.perfil = { nome: d.nome.trim(), curso: d.curso, ano: d.ano, tempo: d.tempo, adaptacao: d.adaptacao || null };
-      salvar(); ir('diagIntro');
-    }
+    if (cad.passo < PERG_CAD.length - 1) { cad.passo++; erroMsg = null; telaAnterior = null; render(); return; }
+    const d = cad.dados;
+    executar(async function () {
+      const r = await rpc('cadastrar', {
+        p_nome: d.nome.trim(), p_curso: d.curso,
+        p_ano: parseInt(String(d.ano).replace(/\D/g, ''), 10) || null,
+        p_tempo: d.tempo, p_adaptacao: d.adaptacao || null, p_pin: d.pin
+      });
+      token = r.token; gravarToken(token);
+      cad = { passo: 0, dados: {} };          // o PIN não fica guardado no celular
+      await carregarDados();
+      ir('contaCriada');
+    });
   },
-  cadVoltar: function () { if (cad.passo > 0) { cad.passo--; telaAnterior = null; render(); } else ir('boas'); },
+  cadVoltar: function () { erroMsg = null; if (cad.passo > 0) { cad.passo--; telaAnterior = null; render(); } else ir('boas'); },
 
-  diagIntroVoltar: function () {
-    cad = { passo: PERG_CAD.length - 1, dados: Object.assign({}, S.perfil || {}) };
-    ir('cadastro');
-  },
+  irDiagIntro: function () { ir('diagIntro'); },
   diagIniciar: function () { dg = { i: 0, resp: [], sel: null }; ir('diag'); },
   diagSel: function (v) { dg.sel = +v; render('[data-acao="diagSel"][data-valor="' + v + '"]'); },
-  diagConfirmar: function () { if (dg.sel === null) return; dg.resp[dg.i] = dg.sel; telaAnterior = null; avancarDiag(); },
-  diagNaoSei: function () { dg.resp[dg.i] = null; telaAnterior = null; avancarDiag(); },
+  diagConfirmar: function () { if (dg.sel === null) return; dg.resp[dg.i] = dg.sel; avancarDiag(); },
+  diagNaoSei: function () { dg.resp[dg.i] = null; avancarDiag(); },
   diagVoltar: function () {
+    erroMsg = null;
     if (dg.i > 0) { dg.i--; dg.sel = dg.resp[dg.i] != null ? dg.resp[dg.i] : null; telaAnterior = null; render(); }
     else ir('diagIntro');
   },
@@ -643,24 +822,25 @@ const ACOES = {
   },
   aulaProxima: function () { au.i++; au.sel = null; au.respondida = false; au.extras = []; telaAnterior = null; render(); },
   aulaConcluir: function () {
-    const hoje = hojeISO();
-    if (S.ultimaAula !== hoje) { S.streak++; S.ultimaAula = hoje; }
-    S.aulas++;
-    S.acertosUltima = au.acertos;
-    S.niveis[AULA.materia] = Math.min(100, (S.niveis[AULA.materia] || 0) + au.acertos * 4);
-    S.subiuHoje = hoje;
-    salvar();
-    veioDaAula = true; ir('progresso');
+    const n = AULA.questoes.length;
+    executar(async function () {
+      await rpc('registrar_aula', { p_token: token, p_dia: hojeISO(), p_materia: AULA.materia, p_assunto: AULA.assunto, p_acertos: au.acertos, p_erros: n - au.acertos });
+      await carregarDados();
+      acertosUltima = au.acertos; subiuHoje = hojeISO(); veioDaAula = true;
+      ir('progresso');
+    });
   },
   aulaVoltar: function () {
     if ((au.i > 0 || au.respondida) && !confirm('Sair da aula agora? As respostas desta aula não serão guardadas.')) return;
     ir('inicio');
   },
 
-  reiniciar: function () {
-    if (!confirm('Apagar os dados de demonstração e começar do zero?')) return;
-    try { localStorage.removeItem(CHAVE_LOCAL); } catch (e) { }
-    S = novoEstado(); veioDaAula = false; ir('boas');
+  sair: function () {
+    if (!confirm('Sair desta conta neste celular? Para voltar, você vai precisar do usuário e do PIN.')) return;
+    const t = token;
+    apagarToken(); token = null; S = novoEstado(); veioDaAula = false;
+    rpc('sair', { p_token: t }).catch(function () { });
+    ir('boas');
   }
 };
 
@@ -670,15 +850,17 @@ function render(foco) {
   app.innerHTML = TELAS[tela]();
   if (tela !== telaAnterior) {
     window.scrollTo(0, 0);
-    const h = app.querySelector('h1');
-    if (h) h.focus({ preventScroll: true });
     telaAnterior = tela;
-    const campo = app.querySelector('#campo-nome');
+    const campo = app.querySelector('#campo-nome, #campo-usuario, #campo-pin');
     if (campo && !campo.value) campo.focus({ preventScroll: true });
-  } else if (foco) {
+    else { const h = app.querySelector('h1'); if (h) h.focus({ preventScroll: true }); }
+  }
+  if (foco) {
     const el = app.querySelector(foco);
-    if (el) el.focus({ preventScroll: foco !== '#retorno' });
-    if (foco === '#retorno' && el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    if (el) {
+      el.focus({ preventScroll: true });
+      if (foco === '#retorno' || foco === '#erro') el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
   }
 }
 app.addEventListener('click', function (e) {
@@ -687,15 +869,38 @@ app.addEventListener('click', function (e) {
   const f = ACOES[b.dataset.acao];
   if (f) f(b.dataset.valor);
 });
+/* Digitação: atualiza o botão sem redesenhar a tela (o teclado não fecha) */
 app.addEventListener('input', function (e) {
-  if (e.target.id === 'campo-nome') {
-    cad.dados.nome = e.target.value;
+  const id = e.target.id;
+  if (id === 'campo-pin' || id === 'campo-pin2' || id === 'campo-pin-entrar') {
+    e.target.value = e.target.value.replace(/\D/g, '').slice(0, 4);
+  }
+  const v = e.target.value;
+  if (id === 'campo-nome') cad.dados.nome = v;
+  else if (id === 'campo-pin') cad.dados.pin = v;
+  else if (id === 'campo-pin2') cad.dados.pin2 = v;
+  else if (id === 'campo-usuario') ent.usuario = v;
+  else if (id === 'campo-pin-entrar') ent.pin = v;
+  else return;
+
+  if (tela === 'cadastro') {
     const btn = app.querySelector('[data-acao="cadContinuar"]');
-    if (btn) btn.disabled = !cadPodeSeguir();
+    if (btn) btn.disabled = ocupado || !cadPodeSeguir();
+    const av = app.querySelector('#aviso-pin');
+    if (av) av.innerHTML = avisoPin();
+    if (id === 'campo-pin' && v.length === 4) { const p2 = app.querySelector('#campo-pin2'); if (p2 && !p2.value) p2.focus(); }
+  } else if (tela === 'entrar') {
+    const btn = app.querySelector('[data-acao="entrar"]');
+    if (btn) btn.disabled = ocupado || !(ent.usuario.trim() && /^\d{4}$/.test(ent.pin));
   }
 });
 app.addEventListener('keydown', function (e) {
-  if (e.target.id === 'campo-nome' && e.key === 'Enter') { e.preventDefault(); ACOES.cadContinuar(); }
+  if (e.key !== 'Enter') return;
+  const id = e.target.id;
+  if (id === 'campo-nome' || id === 'campo-pin2') { e.preventDefault(); ACOES.cadContinuar(); }
+  else if (id === 'campo-pin') { e.preventDefault(); const p2 = app.querySelector('#campo-pin2'); if (p2) p2.focus(); }
+  else if (id === 'campo-usuario') { e.preventDefault(); const p = app.querySelector('#campo-pin-entrar'); if (p) p.focus(); }
+  else if (id === 'campo-pin-entrar') { e.preventDefault(); ACOES.entrar(); }
 });
 
 /* ---------- PWA: manifesto embutido (instalar na tela inicial) ---------- */
@@ -711,7 +916,19 @@ try {
   document.head.appendChild(link);
 } catch (e) { }
 
-render();
+/* ---------- Abertura do app ---------- */
+async function iniciar() {
+  if (!token) { ir('boas'); return; }
+  ir('carregando');
+  try {
+    await carregarDados();
+    ir(S.diagFeito ? 'inicio' : 'diagIntro');
+  } catch (e) {
+    if (e.codigo === 'sessao') { apagarToken(); token = null; ent = { usuario: '', pin: '', esqueci: false }; ir('entrar', e.message); }
+    else ir('falha', e.message);
+  }
+}
+iniciar();
 })();
 </script>
 </body>
