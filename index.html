@@ -136,6 +136,17 @@ h1:focus,h2:focus,[tabindex="-1"]:focus{outline:none}
 .bola.hoje{border:2px solid var(--primaria);color:var(--primaria)}
 .dia.hoje{color:var(--primaria);font-weight:600}
 
+/* ===================== PLANO DA SEMANA ===================== */
+.lista-plano{list-style:none;display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.item-cab{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.item-titulo{font-weight:600;margin-top:4px}
+.item-hoje{border:2px solid var(--primaria);padding:15px}
+.item-descanso{background:transparent}
+.selo-dia{display:inline-flex;align-items:center;gap:4px;font-size:.875rem;font-weight:600;white-space:nowrap}
+.selo-dia.feito{color:var(--sucesso)}
+.selo-dia.hoje{color:var(--primaria)}
+.selo-dia.perdido{color:var(--texto2)}
+
 /* ===================== MATÉRIAS ===================== */
 .materia{margin-top:16px}
 .materia .cab{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
@@ -169,9 +180,9 @@ h1:focus,h2:focus,[tabindex="-1"]:focus{outline:none}
 'use strict';
 
 /* =========================================================
-   SOFIA — Etapa 2 (cadastro, PIN e dados no Supabase)
+   SOFIA — Etapa 3 (diagnóstico revisado e plano da semana)
    ========================================================= */
-const VERSAO = '0.2.0';
+const VERSAO = '0.3.0';
 
 /* ---------- Supabase (já preenchido) ---------- */
 const SUPABASE_URL   = 'https://ghjbljypxksubmcsvaig.supabase.co';
@@ -233,38 +244,58 @@ const PERG_CAD = [
 
 /* ---------- Diagnóstico (questões autorais) ---------- */
 const AREAS = ['Matemática', 'Biologia', 'Química', 'Física', 'Linguagens', 'Ciências Humanas'];
+/* 12 questões: 2 por área (uma básica e uma de raciocínio), intercaladas para não cansar */
 const DIAG = [
   { area: 'Matemática', assunto: 'Porcentagem',
     enunciado: 'Uma loja anuncia 20% de desconto em uma mochila que custa R$ 150,00. Qual é o preço da mochila com o desconto?',
     alts: ['R$ 30,00', 'R$ 120,00', 'R$ 130,00', 'R$ 170,00'], correta: 1 },
-  { area: 'Matemática', assunto: 'Proporção',
-    enunciado: 'Uma receita usa 3 ovos para fazer 12 biscoitos. Mantendo a mesma proporção, quantos ovos são necessários para fazer 36 biscoitos?',
-    alts: ['6', '8', '9', '12'], correta: 2 },
   { area: 'Biologia', assunto: 'Citologia',
     enunciado: 'Nas células de plantas e animais, o material genético (DNA) fica guardado principalmente em qual estrutura?',
     alts: ['Membrana plasmática', 'Núcleo', 'Citoplasma', 'Parede celular'], correta: 1 },
-  { area: 'Química', assunto: 'Misturas',
-    enunciado: 'Ao misturar água e óleo num copo, formam-se duas camadas bem visíveis. Esse sistema é classificado como:',
-    alts: ['substância pura', 'mistura homogênea', 'mistura heterogênea', 'solução'], correta: 2 },
-  { area: 'Física', assunto: 'Velocidade média',
-    enunciado: 'Um ônibus percorre 180 km em 2 horas. Qual foi a sua velocidade média?',
-    alts: ['45 km/h', '60 km/h', '90 km/h', '360 km/h'], correta: 2 },
   { area: 'Linguagens', assunto: 'Interpretação de texto',
     enunciado: 'Numa rua, uma placa diz: "Proibido estacionar. Sujeito a guincho." Qual é a finalidade principal desse texto?',
     alts: ['Informar o horário de funcionamento da rua', 'Narrar um fato que aconteceu', 'Divulgar uma empresa de guincho', 'Advertir os motoristas sobre uma proibição'], correta: 3 },
-  { area: 'Linguagens', assunto: 'Conectivos',
-    enunciado: 'Na frase "Embora estivesse cansada, ela terminou o trabalho", a palavra "embora" expressa ideia de:',
-    alts: ['causa', 'concessão', 'conclusão', 'tempo'], correta: 1 },
-  { area: 'Ciências Humanas', assunto: 'História do Brasil',
-    enunciado: 'A Lei Áurea, que aboliu oficialmente a escravidão no Brasil, foi assinada em qual ano?',
-    alts: ['1822', '1850', '1888', '1889'], correta: 2 },
+  { area: 'Química', assunto: 'Misturas',
+    enunciado: 'Ao misturar água e óleo num copo, formam-se duas camadas bem visíveis. Esse sistema é classificado como:',
+    alts: ['mistura heterogênea', 'mistura homogênea', 'substância pura', 'substância composta'], correta: 0 },
   { area: 'Ciências Humanas', assunto: 'Geografia do Brasil',
     enunciado: 'No sertão nordestino, de clima semiárido, a vegetação típica, com plantas adaptadas à falta de água, é:',
     alts: ['a Caatinga', 'o Pampa', 'a Mata de Araucárias', 'o Manguezal'], correta: 0 },
-  { area: 'Matemática', assunto: 'Média aritmética',
-    enunciado: 'Uma estudante tirou as notas 6, 7, 8 e 9 em quatro provas. Qual é a média aritmética dessas notas?',
-    alts: ['7,0', '8,0', '30,0', '7,5'], correta: 3 }
+  { area: 'Física', assunto: 'Velocidade média',
+    enunciado: 'Um ônibus percorre 180 km em 2 horas. Qual foi a sua velocidade média?',
+    alts: ['45 km/h', '90 km/h', '180 km/h', '360 km/h'], correta: 1 },
+  { area: 'Matemática', assunto: 'Escala e proporção',
+    enunciado: 'Num mapa, cada 1 cm representa 2 km reais. Duas cidades estão a 7,5 cm uma da outra nesse mapa. Qual é a distância real entre elas?',
+    alts: ['3,75 km', '9,5 km', '15 km', '150 km'], correta: 2 },
+  { area: 'Biologia', assunto: 'Ecologia',
+    enunciado: 'Numa lagoa, algas são comidas por pequenos crustáceos, que são comidos por peixes, que são comidos por garças. Se todos os peixes forem retirados, o que tende a acontecer primeiro?',
+    alts: ['As algas tendem a aumentar', 'As garças passam a comer algas', 'Os crustáceos tendem a aumentar', 'Os crustáceos tendem a desaparecer'], correta: 2 },
+  { area: 'Linguagens', assunto: 'Conectivos',
+    enunciado: 'Na frase "Embora estivesse cansada, ela terminou o trabalho", a palavra "embora" expressa ideia de:',
+    alts: ['causa', 'concessão', 'conclusão', 'tempo'], correta: 1 },
+  { area: 'Química', assunto: 'Transformações químicas',
+    enunciado: 'Qual destas situações do dia a dia é uma transformação química, isto é, forma uma substância nova?',
+    alts: ['O gelo derretendo num copo', 'A água fervendo na panela', 'A ferrugem se formando num portão de ferro', 'O açúcar se dissolvendo no café'], correta: 2 },
+  { area: 'Ciências Humanas', assunto: 'Abolição e suas consequências',
+    enunciado: 'A Lei Áurea (1888) acabou com a escravidão no Brasil, mas não garantiu terra, escola ou trabalho às pessoas libertas. Uma consequência dessa forma de abolição foi:',
+    alts: ['a igualdade econômica imediata entre negros e brancos', 'a marginalização social de grande parte da população liberta', 'a volta legal da escravidão no ano seguinte', 'a distribuição de terras às pessoas que foram escravizadas'], correta: 1 },
+  { area: 'Física', assunto: 'Consumo de energia',
+    enunciado: 'Um chuveiro elétrico de 5.000 W (5 kW) fica ligado 30 minutos por dia. Quanta energia elétrica ele consome por dia?',
+    alts: ['10 kWh', '150 kWh', '5 kWh', '2,5 kWh'], correta: 3 }
 ];
+
+/* Trilha de assuntos por matéria: do básico para o mais cobrado.
+   A Sofia sempre pega o próximo assunto ainda não estudado. */
+const TRILHAS = {
+  'Matemática': ['Porcentagem', 'Razão, proporção e escala', 'Regra de três', 'Leitura de gráficos e tabelas', 'Média, moda e mediana', 'Equações do 1º grau', 'Funções do 1º grau', 'Áreas e perímetros', 'Volume de sólidos', 'Probabilidade'],
+  'Biologia': ['Citologia', 'Ecologia: cadeias e teias alimentares', 'Bioquímica: nutrientes e enzimas', 'Fisiologia humana', 'Genética básica', 'Evolução', 'Doenças e saúde pública', 'Botânica'],
+  'Química': ['Misturas e separação', 'Transformações físicas e químicas', 'Estrutura atômica', 'Tabela periódica', 'Ligações químicas', 'Reações e balanceamento', 'Estequiometria', 'Soluções e concentração', 'Química orgânica: funções'],
+  'Física': ['Velocidade média', 'Leis de Newton', 'Energia e trabalho', 'Potência e consumo de energia', 'Calor e temperatura', 'Ondas e som', 'Óptica', 'Circuitos elétricos simples'],
+  'Linguagens': ['Interpretação de texto', 'Gêneros textuais', 'Conectivos e coesão', 'Funções da linguagem', 'Figuras de linguagem', 'Variação linguística', 'Charges e tirinhas', 'Escolas literárias'],
+  'Ciências Humanas': ['Biomas brasileiros', 'Escravidão e abolição', 'Brasil Colônia', 'Era Vargas', 'Ditadura e redemocratização', 'Urbanização', 'Globalização', 'Cidadania e direitos humanos', 'Ética na Filosofia'],
+  'Redação': ['O texto dissertativo-argumentativo', 'Como interpretar o tema', 'Tese e introdução', 'Desenvolvimento e argumentos', 'Repertório sociocultural', 'Conclusão e proposta de intervenção', 'As 5 competências na prática']
+};
+const MINUTOS = { '30 minutos': 30, '1 hora': 60, '1 hora e meia': 90, '2 horas': 120 };
 
 /* ---------- Aula de exemplo (a IA entra na Etapa 4) ---------- */
 const AULA = {
@@ -305,8 +336,6 @@ const AULA = {
   ]
 };
 
-/* Plano semanal inicial (Seg..Dom) */
-const PLANO = ['Matemática', 'Biologia e Química', 'Linguagens e interpretação de texto', 'Física e Matemática aplicada', 'Ciências Humanas', 'Redação ou revisão', null];
 const DIAS_CURTOS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 const DIAS_LONGOS = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
 
@@ -318,10 +347,103 @@ function dataExtenso(d) {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 function hojeISO() { return isoLocal(new Date()); }
+function segundaDe(d) { const s = new Date(d); s.setHours(12, 0, 0, 0); s.setDate(s.getDate() - idxSemana(s)); return s; }
+function numSemana(seg) { return Math.floor(Date.UTC(seg.getFullYear(), seg.getMonth(), seg.getDate()) / 604800000); }
+function dataCurta(d) { return String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0'); }
+function listaTexto(arr) { return arr.length <= 1 ? arr.join('') : arr.slice(0, -1).join(', ') + ' e ' + arr[arr.length - 1]; }
+
+/* =================== PLANO DA SEMANA =================== */
+/* Base do prompt (Seg Mat · Ter Bio/Quí · Qua Linguagens · Qui Física/Mat · Sex Humanas · Sáb Redação/revisão),
+   ajustada pelo diagnóstico:
+   - Terça e quinta: se uma das duas matérias está 30 pontos ou mais abaixo, ela fica com o dia;
+     se estão parecidas, alternam a cada semana (começando pela mais fraca).
+   - Sábado: uma semana Redação, na outra revisão da matéria mais fraca. */
+function gerarPlano(seg) {
+  const nv = S.niveis || {}, par = numSemana(seg) % 2 === 0;
+  const n = function (a) { return nv[a] || 0; };
+  function escolher(a, b) {
+    const fraca = n(a) <= n(b) ? a : b, forte = fraca === a ? b : a;
+    if (Math.abs(n(a) - n(b)) >= 30) return fraca;
+    return par ? fraca : forte;
+  }
+  const maisFraca = AREAS.slice().sort(function (x, y) { return n(x) - n(y); })[0];
+  return [
+    { dia: 0, area: 'Matemática', tipo: 'aula' },
+    { dia: 1, area: escolher('Biologia', 'Química'), tipo: 'aula' },
+    { dia: 2, area: 'Linguagens', tipo: 'aula' },
+    { dia: 3, area: escolher('Física', 'Matemática'), tipo: 'aula' },
+    { dia: 4, area: 'Ciências Humanas', tipo: 'aula' },
+    par ? { dia: 5, area: 'Redação', tipo: 'redacao' } : { dia: 5, area: maisFraca, tipo: 'revisao' }
+  ];
+}
+function planoSalvo(segISO) {
+  const p = (S.planos || []).find(function (x) { return x.semana === segISO; });
+  return p ? p.plano : null;
+}
+function planoDe(seg) { return planoSalvo(isoLocal(seg)) || gerarPlano(seg); }
+function tituloItem(r) {
+  if (r.tipo === 'revisao') return 'Revisão · ' + r.area;
+  return r.area + (r.assunto ? ' · ' + r.assunto : '');
+}
+/* Projeta os assuntos: quem faltou não acumula, o assunto só passa para a próxima aula daquela matéria */
+function criarSeletor() {
+  const est = new Set((S.estudados || []).map(function (e) { return e.materia + '|' + e.assunto; }));
+  const reservados = {};
+  return function (area) {
+    const t = TRILHAS[area] || [];
+    reservados[area] = reservados[area] || new Set();
+    for (let i = 0; i < t.length; i++) {
+      if (!est.has(area + '|' + t[i]) && !reservados[area].has(t[i])) { reservados[area].add(t[i]); return t[i]; }
+    }
+    return 'Revisão geral';
+  };
+}
+function projetarSemana(base) {
+  const agora = base || new Date(), hi = idxSemana(agora), seg = segundaDe(agora);
+  const plano = planoDe(seg), feitos = new Set(S.dias), proximo = criarSeletor();
+  return plano.map(function (p) {
+    const d = new Date(seg); d.setDate(seg.getDate() + p.dia);
+    const iso = isoLocal(d);
+    const r = { dia: p.dia, data: d, iso: iso, area: p.area, tipo: p.tipo };
+    if (feitos.has(iso)) {
+      const a = (S.aulasRecentes || []).find(function (x) { return x.dia === iso; });
+      r.status = 'feito';
+      r.titulo = a ? a.materia + ' · ' + a.assunto : tituloItem(r);
+    } else if (p.dia < hi) {
+      r.status = 'perdido';
+      r.titulo = r.tipo === 'revisao' ? 'Revisão · ' + r.area : r.area;
+    } else {
+      r.status = p.dia === hi ? 'hoje' : 'futuro';
+      if (r.tipo !== 'revisao') r.assunto = proximo(r.area);
+      r.titulo = tituloItem(r);
+    }
+    return r;
+  });
+}
+function aulaDeHoje() {
+  const hi = idxSemana(new Date());
+  return hi < 6 ? projetarSemana()[hi] : null;
+}
 function proximoAssunto() {
-  const d = new Date(); d.setDate(d.getDate() + 1);
-  const p = PLANO[idxSemana(d)];
-  return p ? 'Amanhã: ' + p + '.' : 'Amanhã é domingo, dia de descanso. Na segunda: ' + PLANO[0] + '.';
+  const hoje = new Date(), hi = idxSemana(hoje);
+  if (hi < 5) return 'Amanhã: ' + projetarSemana()[hi + 1].titulo + '.';
+  const seg = segundaDe(hoje); seg.setDate(seg.getDate() + 7);
+  const p = planoDe(seg)[0], r = { area: p.area, tipo: p.tipo };
+  if (p.tipo !== 'revisao') r.assunto = criarSeletor()(p.area);
+  const titulo = tituloItem(r);
+  return hi === 5 ? 'Amanhã é domingo, dia de descanso. Na segunda: ' + titulo + '.' : 'Amanhã: ' + titulo + '.';
+}
+function textoAtencao() {
+  const nv = S.niveis || {};
+  const fracas = AREAS.filter(function (a) { return (nv[a] || 0) < 50; })
+    .sort(function (x, y) { return (nv[x] || 0) - (nv[y] || 0); }).slice(0, 3);
+  return fracas.length
+    ? 'Vou dar atenção especial a ' + listaTexto(fracas) + '.'
+    : 'Você foi bem em todas as áreas do diagnóstico. Vamos manter o ritmo e aprofundar.';
+}
+function duracaoAula(r) {
+  const m = (S.perfil && MINUTOS[S.perfil.tempo_diario]) || 60;
+  return m + ' min · ' + (r.tipo === 'redacao' ? 'explicação e escrita' : r.tipo === 'revisao' ? 'revisão e exercícios' : 'revisão, explicação e exercícios');
 }
 /* Sequência de dias: domingo sem estudo não quebra a sequência */
 function calcularSequencia(dias) {
@@ -368,7 +490,7 @@ function gravarToken(t) { try { localStorage.setItem(CHAVE_TOKEN, t); } catch (e
 function apagarToken() { try { localStorage.removeItem(CHAVE_TOKEN); } catch (e) { } }
 
 /* ---------- Estado ---------- */
-function novoEstado() { return { perfil: null, niveis: {}, diagFeito: false, acertosDiag: 0, aulas: 0, dias: [] }; }
+function novoEstado() { return { perfil: null, niveis: {}, diagFeito: false, acertosDiag: 0, aulas: 0, dias: [], planos: [], aulasRecentes: [], estudados: [] }; }
 let S = novoEstado();
 let token = lerToken();
 let tela = 'carregando';
@@ -390,8 +512,21 @@ function aplicarDados(d) {
   S.acertosDiag = d.acertos_diag || 0;
   S.aulas = d.aulas_total || 0;
   S.dias = d.dias || [];
+  S.planos = d.planos || [];
+  S.aulasRecentes = d.aulas_recentes || [];
+  S.estudados = d.estudados || [];
 }
-async function carregarDados() { aplicarDados(await rpc('meus_dados', { p_token: token })); }
+async function salvarPlano(seg, plano) {
+  const iso = isoLocal(seg);
+  S.planos = [{ semana: iso, plano: plano }].concat((S.planos || []).filter(function (x) { return x.semana !== iso; }));
+  try { await rpc('salvar_plano', { p_token: token, p_semana: iso, p_plano: plano }); }
+  catch (e) { console.error('Sofia: plano não salvo', e); } // o plano continua valendo neste celular
+}
+async function carregarDados() {
+  aplicarDados(await rpc('meus_dados', { p_token: token }));
+  const seg = segundaDe(new Date());
+  if (S.diagFeito && !planoSalvo(isoLocal(seg))) await salvarPlano(seg, gerarPlano(seg)); // semana nova = plano novo
+}
 
 /* ---------- Tema (sol/lua) ---------- */
 function temaInicial() {
@@ -550,7 +685,7 @@ TELAS.contaCriada = function () {
 TELAS.diagIntro = function () {
   const nome = S.perfil ? esc(S.perfil.nome) : '';
   return '<main class="tela">' + topo(null, 'Diagnóstico') +
-    balao('Agora quero conhecer o que você já sabe, ' + nome + '. São 10 questões rápidas de várias matérias, uma por vez e sem cronômetro.') +
+    balao('Agora quero conhecer o que você já sabe, ' + nome + '. São ' + DIAG.length + ' questões rápidas de várias matérias, uma por vez e sem cronômetro.') +
     balao('Se não souber alguma, toque em <strong>Ainda não sei</strong>. Isso me ajuda tanto quanto um acerto, e não vale nota de nada.') +
     '<div class="acoes">' + botao('diagIniciar', 'Começar diagnóstico') + '</div></main>';
 };
@@ -584,7 +719,8 @@ TELAS.diagResultado = function () {
     '<p class="sec">Você acertou ' + S.acertosDiag + ' de ' + DIAG.length + ' questões.</p>' +
     balao('Obrigada, ' + esc(S.perfil.nome) + '! Agora sei por onde começar. Isso não é nota do ENEM: é só um ponto de partida, e eu vou ajustando a cada aula.') +
     '<h2 class="subtitulo" style="margin-top:8px">Seu ponto de partida</h2>' + linhas +
-    '<div class="acoes">' + botao('irInicio', 'Ir para o início') + '</div></main>';
+    balao(esc(textoAtencao()) + ' Já montei o seu plano desta semana.') +
+    '<div class="acoes">' + botao('irPlano', 'Ver meu plano da semana') + botao('irInicio', 'Ir para o início', 'secundario') + '</div></main>';
 };
 
 /* 04 Início */
@@ -609,16 +745,18 @@ TELAS.inicio = function () {
   let cartaoAula;
   if (hi === 6 && !feitaHoje) {
     cartaoAula = '<section class="cartao cartao-destaque"><p class="rotulo">HOJE</p><h2 class="titulo">Dia de descanso</h2>' +
-      '<p class="sec">Descansar também faz parte do estudo. Amanhã: ' + PLANO[0] + '.</p></section>';
+      '<p class="sec">Descansar também faz parte do estudo. ' + esc(proximoAssunto()) + '</p></section>';
   } else if (feitaHoje) {
     cartaoAula = '<section class="cartao cartao-destaque"><p class="rotulo">AULA DE HOJE</p><h2 class="titulo">Aula concluída <span class="icone-ok">' + ic('check', 22) + '</span></h2>' +
-      '<p class="sec" style="margin-bottom:16px">' + proximoAssunto() + '</p>' +
+      '<p class="sec" style="margin-bottom:16px">' + esc(proximoAssunto()) + '</p>' +
       botao('aulaIniciar', 'Refazer a aula', 'secundario') + '</section>';
   } else {
+    const h = aulaDeHoje();
     cartaoAula = '<section class="cartao cartao-destaque"><p class="rotulo">AULA DE HOJE</p>' +
-      '<h2 class="titulo">' + AULA.materia + ' · ' + AULA.assunto + '</h2>' +
-      '<p class="info-linha">' + ic('relogio', 20) + '<span>' + AULA.duracao + '</span></p>' +
-      botao('aulaIniciar', 'Começar aula de hoje') + '</section>';
+      '<h2 class="titulo">' + esc(h.titulo) + '</h2>' +
+      '<p class="info-linha">' + ic('relogio', 20) + '<span>' + esc(duracaoAula(h)) + '</span></p>' +
+      botao('aulaIniciar', 'Começar aula de hoje') +
+      '<p class="legenda" style="margin-top:12px">Por enquanto abre a aula de demonstração (Biologia · Citologia). A aula deste assunto com a Sofia chega na v0.4.</p></section>';
   }
 
   const ano = S.perfil.ano_enem;
@@ -632,8 +770,37 @@ TELAS.inicio = function () {
     cartaoAula +
     '<h2 class="subtitulo" style="margin-top:24px">Sua semana</h2>' +
     '<ul class="semana">' + semana + '</ul>' +
+    '<button class="btn btn-secundario" data-acao="irPlano" style="margin-top:16px">Ver o plano da semana</button>' +
     '<p class="sec" style="margin-top:16px">' + fase + ' Domingo é dia de descanso.</p>' +
     versao() + '</main>' + nav('inicio');
+};
+
+/* Plano da semana */
+TELAS.plano = function () {
+  const dias = projetarSemana(), hi = idxSemana(new Date());
+  const selo = {
+    feito: '<span class="selo-dia feito">' + ic('check', 16) + 'Estudado</span>',
+    hoje: '<span class="selo-dia hoje">Hoje</span>',
+    perdido: '<span class="selo-dia perdido">Não estudado</span>',
+    futuro: ''
+  };
+  const itens = dias.map(function (r) {
+    const nota = r.status === 'perdido'
+      ? '<p class="legenda" style="margin-top:4px">Sem problema: o assunto fica para a próxima aula de ' + esc(r.area) + '.</p>' : '';
+    return '<li class="cartao item-plano' + (r.status === 'hoje' ? ' item-hoje' : '') + '">' +
+      '<div class="item-cab"><span class="legenda">' + DIAS_LONGOS[r.dia] + ' · ' + dataCurta(r.data) + '</span>' + selo[r.status] + '</div>' +
+      '<p class="item-titulo">' + esc(r.titulo) + '</p>' + nota + '</li>';
+  }).join('');
+  const domingo = new Date(dias[0].data); domingo.setDate(domingo.getDate() + 6);
+  return '<main class="tela">' + topo('irInicio', 'Plano da semana') +
+    '<p class="legenda">Semana de ' + dataCurta(dias[0].data) + ' a ' + dataCurta(dias[5].data) + '</p>' +
+    balao('Montei esta semana a partir do seu diagnóstico. ' + esc(textoAtencao()) +
+      ' Se faltar um dia, nada acumula: o assunto passa para a próxima aula daquela matéria.') +
+    '<ul class="lista-plano">' + itens +
+      '<li class="cartao item-plano item-descanso"><div class="item-cab"><span class="legenda">Domingo · ' + dataCurta(domingo) + '</span></div>' +
+      '<p class="item-titulo">Descanso</p></li></ul>' +
+    (hi === 6 ? '<p class="sec" style="margin-top:16px">' + esc(proximoAssunto()) + '</p>' : '') +
+    versao() + '</main>';
 };
 
 /* 05 Aula */
@@ -738,6 +905,8 @@ async function finalizarDiag() {
   await executar(async function () {
     await rpc('salvar_diagnostico', { p_token: token, p_respostas: dg.resp.map(function (x) { return x == null ? null : x; }), p_acertos: r.acertos, p_niveis: r.niveis });
     S.niveis = r.niveis; S.acertosDiag = r.acertos; S.diagFeito = true;
+    const seg = segundaDe(new Date());
+    await salvarPlano(seg, gerarPlano(seg)); // plano refeito com o resultado novo
     ir('diagResultado');
   });
 }
@@ -800,6 +969,7 @@ const ACOES = {
   },
 
   irInicio: function () { veioDaAula = false; ir('inicio'); },
+  irPlano: function () { ir('plano'); },
   irProgresso: function () { veioDaAula = false; ir('progresso'); },
 
   aulaIniciar: function () { au = { i: 0, sel: null, respondida: false, acertos: 0, extras: [] }; ir('aula'); },
