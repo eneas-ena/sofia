@@ -1,0 +1,718 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sofia</title>
+<meta name="description" content="Sofia — sua professora particular para o ENEM">
+<meta name="theme-color" content="#F8FAFC">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Sofia">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Ccircle cx='256' cy='256' r='256' fill='%231D4ED8'/%3E%3Ctext x='256' y='340' font-family='Arial,sans-serif' font-size='260' font-weight='700' fill='white' text-anchor='middle'%3ES%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* ===================== DESIGN SYSTEM (tokens) ===================== */
+:root{
+  --primaria:#1D4ED8; --sobre-primaria:#FFFFFF;
+  --texto:#111827; --texto2:#4B5563;
+  --sucesso:#15803D; --sucesso-suave:#F0FDF4; --sobre-sucesso:#FFFFFF;
+  --erro:#B91C1C; --erro-suave:#FEF2F2; --sobre-erro:#FFFFFF;
+  --conquista:#F59E0B; --sobre-conquista:#111827;
+  --fundo:#F8FAFC; --superficie:#FFFFFF; --destaque:#EFF6FF; --borda:#E5E7EB;
+  --rotulo:#1D4ED8;
+  color-scheme:light;
+}
+:root[data-theme="dark"]{
+  --primaria:#60A5FA; --sobre-primaria:#0F172A;
+  --texto:#F9FAFB; --texto2:#CBD5E1;
+  --sucesso:#4ADE80; --sucesso-suave:#052E16; --sobre-sucesso:#052E16;
+  --erro:#F87171; --erro-suave:#450A0A; --sobre-erro:#450A0A;
+  --conquista:#FBBF24; --sobre-conquista:#0F172A;
+  --fundo:#0F172A; --superficie:#1E293B; --destaque:#1E3A8A; --borda:#334155;
+  --rotulo:#BFDBFE;
+  color-scheme:dark;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{font-size:100%;-webkit-text-size-adjust:100%}
+body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;background:var(--fundo);color:var(--texto);font-size:1rem;line-height:1.5;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--primaria);outline-offset:2px}
+h1:focus,h2:focus{outline:none}
+
+/* ===================== LAYOUT ===================== */
+.app{max-width:480px;margin:0 auto;min-height:100vh;min-height:100dvh}
+.tela{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;padding:16px 16px calc(24px + env(safe-area-inset-bottom))}
+.tela.com-nav{padding-bottom:calc(96px + env(safe-area-inset-bottom))}
+.acoes{margin-top:auto;padding-top:24px}
+
+/* ===================== TIPOGRAFIA ===================== */
+.titulo{font-size:1.5rem;font-weight:700;line-height:2rem}
+.subtitulo{font-size:1.125rem;font-weight:600;line-height:1.75rem}
+.legenda{font-size:.875rem;line-height:1.25rem;color:var(--texto2)}
+.sec{color:var(--texto2)}
+.enunciado{margin:8px 0}
+
+/* ===================== TOPO ===================== */
+.topo{display:flex;align-items:center;gap:4px;min-height:56px;margin-bottom:8px}
+.topo .subtitulo{flex:1}
+.cab-inicio{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin:8px 0 16px}
+.btn-icone{width:48px;height:48px;border-radius:50%;border:1px solid var(--borda);background:var(--superficie);color:var(--texto);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
+.btn-voltar{border:none;background:transparent;margin-left:-12px}
+
+/* ===================== BOTÕES ===================== */
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:48px;padding:10px 16px;border-radius:12px;font-weight:600;font-size:1rem;line-height:1.5rem;cursor:pointer;border:2px solid var(--primaria);text-align:center}
+.btn-primario{background:var(--primaria);color:var(--sobre-primaria)}
+.btn-secundario{background:var(--superficie);color:var(--primaria)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn + .btn{margin-top:8px}
+.linha-btns{display:flex;gap:8px;margin-bottom:8px}
+.linha-btns .btn{margin:0}
+.btn-link{background:none;border:none;color:var(--primaria);font-weight:600;min-height:48px;padding:12px;cursor:pointer;text-decoration:underline;display:block;margin:8px auto 0}
+
+/* ===================== PROGRESSO ===================== */
+.barra{height:8px;border-radius:999px;background:var(--borda);overflow:hidden;margin-top:8px}
+.barra > span{display:block;height:100%;background:var(--primaria);border-radius:999px;transition:width .3s}
+
+/* ===================== BALÃO DA SOFIA ===================== */
+.balao{display:flex;gap:12px;align-items:flex-start;margin:16px 0}
+.avatar{width:40px;height:40px;border-radius:50%;background:var(--primaria);color:var(--sobre-primaria);font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.balao-corpo{background:var(--destaque);border-radius:16px;padding:12px 16px;flex:1}
+.balao-nome{font-size:.875rem;line-height:1.25rem;color:var(--rotulo);font-weight:600;display:block;margin-bottom:2px}
+
+/* ===================== ALTERNATIVAS ===================== */
+.opcoes{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.opcao{display:flex;align-items:center;gap:12px;width:100%;min-height:56px;padding:11px 15px;background:var(--superficie);border:1px solid var(--borda);border-radius:12px;color:var(--texto);text-align:left;cursor:pointer;line-height:1.5rem}
+.opcao .txt{flex:1}
+.letra{width:32px;height:32px;border-radius:50%;border:1px solid var(--borda);display:flex;align-items:center;justify-content:center;font-weight:600;flex-shrink:0}
+.opcao[aria-checked="true"]{border:2px solid var(--primaria);background:var(--destaque);padding:10px 14px}
+.opcao[aria-checked="true"] .letra{background:var(--primaria);color:var(--sobre-primaria);border-color:var(--primaria)}
+.opcao.correta{border:2px solid var(--sucesso);background:var(--sucesso-suave);padding:10px 14px}
+.opcao.correta .letra{background:var(--sucesso);color:var(--sobre-sucesso);border-color:var(--sucesso)}
+.opcao.incorreta{border:2px solid var(--erro);background:var(--erro-suave);padding:10px 14px}
+.opcao.incorreta .letra{background:var(--erro);color:var(--sobre-erro);border-color:var(--erro)}
+.opcao:disabled{cursor:default}
+.selo{display:inline-flex;align-items:center;gap:4px;font-size:.875rem;font-weight:600;white-space:nowrap}
+.correta .selo{color:var(--sucesso)}
+.incorreta .selo{color:var(--erro)}
+
+/* ===================== CAMPOS ===================== */
+.campo{margin-top:8px}
+.campo label{display:block;margin-bottom:8px}
+.campo input{width:100%;min-height:56px;padding:12px 16px;border:1px solid var(--borda);border-radius:12px;background:var(--superficie);color:var(--texto);font:inherit;font-size:1rem}
+.campo input:focus{outline:none;border:2px solid var(--primaria);padding:11px 15px}
+.ajuda{margin-top:16px}
+
+/* ===================== ETIQUETA / CARTÕES ===================== */
+.etiqueta{display:inline-block;background:var(--destaque);color:var(--rotulo);font-size:.875rem;line-height:1.25rem;padding:4px 12px;border-radius:8px;margin:16px 0 8px}
+.cartao{background:var(--superficie);border:1px solid var(--borda);border-radius:16px;padding:16px}
+.cartao-destaque{background:var(--destaque);border:none;margin-top:16px}
+.cartao-destaque .rotulo{font-size:.875rem;font-weight:600;letter-spacing:.04em;color:var(--rotulo)}
+.cartao-destaque .titulo{margin:4px 0 8px}
+.info-linha{display:flex;gap:8px;align-items:flex-start;color:var(--texto2);margin-bottom:16px}
+.cartao-conquista{background:var(--conquista);color:var(--sobre-conquista);border:none;display:flex;gap:12px;align-items:center}
+.cartao-conquista .subtitulo{line-height:1.5rem}
+.cartao-conquista .legenda{color:var(--sobre-conquista)}
+.dupla{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.dupla .cartao{display:flex;flex-direction:column;gap:4px;align-items:flex-start}
+.dupla .cartao-conquista{align-items:flex-start}
+.numero{font-size:1.5rem;font-weight:700;line-height:2rem}
+.icone-ok{color:var(--sucesso)}
+
+/* ===================== SEMANA ===================== */
+.semana{display:flex;justify-content:space-between;gap:4px;margin-top:12px;list-style:none}
+.dia{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:.875rem;color:var(--texto2)}
+.bola{width:44px;height:44px;border-radius:50%;border:1px solid var(--borda);background:var(--superficie);display:flex;align-items:center;justify-content:center;font-weight:600;font-size:.875rem}
+.bola.feito{background:var(--sucesso);border-color:var(--sucesso);color:var(--sobre-sucesso)}
+.bola.hoje{border:2px solid var(--primaria);color:var(--primaria)}
+.dia.hoje{color:var(--primaria);font-weight:600}
+
+/* ===================== MATÉRIAS ===================== */
+.materia{margin-top:16px}
+.materia .cab{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.materia .pct{font-size:.875rem;color:var(--texto2);white-space:nowrap}
+
+/* ===================== BOAS-VINDAS ===================== */
+.centro{text-align:center;margin-top:24px}
+.logo{width:96px;height:96px;border-radius:50%;background:var(--primaria);color:var(--sobre-primaria);font-size:3rem;font-weight:700;display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
+.nome-app{font-size:2.25rem;font-weight:700;line-height:2.75rem}
+.slogan{color:var(--primaria);font-size:1.125rem;font-weight:600;line-height:1.75rem;margin:12px 0}
+
+/* ===================== NAVEGAÇÃO INFERIOR ===================== */
+.nav{position:fixed;bottom:0;left:0;right:0;background:var(--superficie);border-top:1px solid var(--borda);display:flex;justify-content:center;padding-bottom:env(safe-area-inset-bottom);z-index:5}
+.nav-interno{display:flex;max-width:480px;width:100%}
+.nav button{flex:1;min-height:64px;background:none;border:none;color:var(--texto2);font-size:.875rem;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer}
+.nav button[aria-current="page"]{color:var(--primaria);font-weight:600}
+
+.versao{text-align:center;font-size:.875rem;color:var(--texto2);margin-top:16px}
+.so-leitor{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div id="app" class="app" aria-live="off"></div>
+
+<script>
+(function () {
+'use strict';
+
+/* =========================================================
+   SOFIA — Etapa 1 (telas e navegação com dados de exemplo)
+   Ainda sem banco de dados e sem IA.
+   ========================================================= */
+const VERSAO = '0.1.0';
+const CHAVE_LOCAL = 'sofia_demo_v1';   // só para a demonstração (Etapa 2 troca pelo Supabase)
+const CHAVE_TEMA = 'sofia_tema';
+
+/* ---------- Ícones ---------- */
+const ICONES = {
+  voltar: '<path d="M15 18l-6-6 6-6"/>',
+  lua: '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>',
+  sol: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>',
+  chama: '<path d="M12 22c4 0 7-3 7-7 0-3-2-5.5-3.5-7-.5 2-1.5 3-3 3.5C13 8 12 5 9 2c.5 3-1.5 5-3 7-1.2 1.6-2 3.5-2 5.5C4 19 8 22 12 22z"/>',
+  relogio: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  casa: '<path d="M3 10.5L12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
+  grafico: '<path d="M4 20h16M7 16v-5M12 16V6M17 16v-8"/>',
+  check: '<path d="M5 12l5 5 9-10"/>',
+  x: '<path d="M6 6l12 12M18 6L6 18"/>'
+};
+function ic(nome, t) {
+  t = t || 24;
+  return '<svg width="' + t + '" height="' + t + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' + ICONES[nome] + '</svg>';
+}
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+const LETRAS = ['A', 'B', 'C', 'D'];
+
+/* ---------- Dados de exemplo: cadastro ---------- */
+const PERG_CAD = [
+  { chave: 'nome', tipo: 'texto', rotulo: 'Seu nome',
+    fala: function () { return 'Oi! Eu sou a Sofia. Como você gosta de ser chamada?'; },
+    ajuda: 'Só o primeiro nome já basta.' },
+  { chave: 'curso', rotulo: 'Curso desejado',
+    fala: function (d) { return 'Prazer, ' + esc(d.nome) + '! Qual curso você sonha em fazer?'; },
+    opcoes: ['Medicina', 'Enfermagem', 'Odontologia', 'Outro curso'],
+    ajuda: 'Você pode mudar isso depois. Usamos essa resposta só para montar o seu plano.' },
+  { chave: 'ano', rotulo: 'Ano do ENEM',
+    fala: function () { return 'Em qual ENEM você quer conquistar a sua vaga?'; },
+    opcoes: ['ENEM 2026', 'ENEM 2027', 'ENEM 2028'],
+    ajuda: 'Se for fazer o de 2026 só para conhecer a prova, escolha o ano em que quer a vaga.' },
+  { chave: 'tempo', rotulo: 'Tempo por dia',
+    fala: function () { return 'Quanto tempo por dia você consegue estudar comigo?'; },
+    opcoes: ['30 minutos', '1 hora', '1 hora e meia', '2 horas'],
+    ajuda: 'Pense num tempo que dá para manter de verdade, 6 dias por semana.' },
+  { chave: 'adaptacao', rotulo: 'Adaptações', opcional: true,
+    fala: function () { return 'Tem algo que me ajude a ensinar do seu jeito?'; },
+    opcoes: ['Não preciso', 'Textos mais curtos', 'Mais exemplos e imagens', 'Letra maior'],
+    ajuda: 'Pergunta opcional. Você pode pular.' }
+];
+
+/* ---------- Dados de exemplo: diagnóstico (questões autorais) ---------- */
+const AREAS = ['Matemática', 'Biologia', 'Química', 'Física', 'Linguagens', 'Ciências Humanas'];
+const DIAG = [
+  { area: 'Matemática', assunto: 'Porcentagem',
+    enunciado: 'Uma loja anuncia 20% de desconto em uma mochila que custa R$ 150,00. Qual é o preço da mochila com o desconto?',
+    alts: ['R$ 30,00', 'R$ 120,00', 'R$ 130,00', 'R$ 170,00'], correta: 1 },
+  { area: 'Matemática', assunto: 'Proporção',
+    enunciado: 'Uma receita usa 3 ovos para fazer 12 biscoitos. Mantendo a mesma proporção, quantos ovos são necessários para fazer 36 biscoitos?',
+    alts: ['6', '8', '9', '12'], correta: 2 },
+  { area: 'Biologia', assunto: 'Citologia',
+    enunciado: 'Nas células de plantas e animais, o material genético (DNA) fica guardado principalmente em qual estrutura?',
+    alts: ['Membrana plasmática', 'Núcleo', 'Citoplasma', 'Parede celular'], correta: 1 },
+  { area: 'Química', assunto: 'Misturas',
+    enunciado: 'Ao misturar água e óleo num copo, formam-se duas camadas bem visíveis. Esse sistema é classificado como:',
+    alts: ['substância pura', 'mistura homogênea', 'mistura heterogênea', 'solução'], correta: 2 },
+  { area: 'Física', assunto: 'Velocidade média',
+    enunciado: 'Um ônibus percorre 180 km em 2 horas. Qual foi a sua velocidade média?',
+    alts: ['45 km/h', '60 km/h', '90 km/h', '360 km/h'], correta: 2 },
+  { area: 'Linguagens', assunto: 'Interpretação de texto',
+    enunciado: 'Numa rua, uma placa diz: "Proibido estacionar. Sujeito a guincho." Qual é a finalidade principal desse texto?',
+    alts: ['Informar o horário de funcionamento da rua', 'Narrar um fato que aconteceu', 'Divulgar uma empresa de guincho', 'Advertir os motoristas sobre uma proibição'], correta: 3 },
+  { area: 'Linguagens', assunto: 'Conectivos',
+    enunciado: 'Na frase "Embora estivesse cansada, ela terminou o trabalho", a palavra "embora" expressa ideia de:',
+    alts: ['causa', 'concessão', 'conclusão', 'tempo'], correta: 1 },
+  { area: 'Ciências Humanas', assunto: 'História do Brasil',
+    enunciado: 'A Lei Áurea, que aboliu oficialmente a escravidão no Brasil, foi assinada em qual ano?',
+    alts: ['1822', '1850', '1888', '1889'], correta: 2 },
+  { area: 'Ciências Humanas', assunto: 'Geografia do Brasil',
+    enunciado: 'No sertão nordestino, de clima semiárido, a vegetação típica, com plantas adaptadas à falta de água, é:',
+    alts: ['a Caatinga', 'o Pampa', 'a Mata de Araucárias', 'o Manguezal'], correta: 0 },
+  { area: 'Matemática', assunto: 'Média aritmética',
+    enunciado: 'Uma estudante tirou as notas 6, 7, 8 e 9 em quatro provas. Qual é a média aritmética dessas notas?',
+    alts: ['7,0', '8,0', '30,0', '7,5'], correta: 3 }
+];
+
+/* ---------- Dados de exemplo: aula ---------- */
+const AULA = {
+  materia: 'Biologia', assunto: 'Citologia',
+  duracao: '40 min · revisão, explicação e 5 questões',
+  abertura: 'Revisão rápida: a célula é a menor unidade viva do nosso corpo. Hoje vamos conhecer as organelas, as "peças" da célula, cada uma com uma função. Vamos praticar?',
+  questoes: [
+    { enunciado: 'Uma estrutura presente na célula vegetal e ausente na animal realiza a fotossíntese. Que estrutura é essa?',
+      alts: ['Mitocôndria', 'Cloroplasto', 'Ribossomo', 'Núcleo'], correta: 1,
+      porque: ['A mitocôndria gera energia e existe tanto na célula vegetal quanto na animal.', '', 'O ribossomo produz proteínas e está presente nos dois tipos de célula.', 'O núcleo guarda o DNA e também existe na célula animal.'],
+      explicacao: 'A fotossíntese é feita pelo cloroplasto, que tem clorofila e só existe nas células de plantas e algas.',
+      simples: 'Vamos por partes: a pergunta quer uma peça que a planta tem e o nosso corpo não tem, e que serve para a fotossíntese, ou seja, transformar a luz do sol em alimento.',
+      exemplo: 'Pense na folha como uma pequena cozinha que funciona com luz do sol. Nós, animais, não temos essa cozinha: precisamos comer. Qual organela seria essa "cozinha solar"?' },
+    { enunciado: 'Os ribossomos estão presentes em todas as células, das bactérias às humanas. Qual é a função principal dessas estruturas?',
+      alts: ['Produzir energia a partir da glicose', 'Digerir partículas dentro da célula', 'Produzir proteínas', 'Armazenar o material genético'], correta: 2,
+      porque: ['Produzir energia a partir da glicose é papel da mitocôndria.', 'Digerir partículas é papel dos lisossomos.', '', 'Guardar o material genético é papel do núcleo, nas células eucariontes.'],
+      explicacao: 'Os ribossomos seguem as instruções do RNA e montam as proteínas, juntando aminoácidos um a um.',
+      simples: 'A pergunta é: o que os ribossomos fabricam? Lembre que o corpo precisa construir muitas moléculas diferentes, como enzimas e anticorpos.',
+      exemplo: 'Imagine uma fábrica: o DNA é o manual guardado no escritório, e o ribossomo é a linha de montagem que segue o manual. Que produto sai dessa linha?' },
+    { enunciado: 'Ao colocar uma hemácia em água pura, ela incha e pode se romper, porque a água entra na célula. A estrutura que separa a célula do meio e controla a entrada e a saída de substâncias é:',
+      alts: ['a membrana plasmática', 'a parede celular', 'o complexo golgiense', 'o centríolo'], correta: 0,
+      porque: ['', 'A parede celular existe em plantas, fungos e bactérias, mas não na hemácia. Ela dá rigidez, mas não é quem escolhe o que entra e sai.', 'O complexo golgiense modifica e embala substâncias dentro da célula.', 'O centríolo participa da divisão celular.'],
+      explicacao: 'A membrana plasmática envolve toda célula e tem permeabilidade seletiva: escolhe o que entra e o que sai. A água atravessa a membrana por osmose.',
+      simples: 'A pergunta quer a "fronteira" da célula: a camada que fica em volta dela e decide o que passa.',
+      exemplo: 'Pense no portão de uma escola, com um porteiro que deixa uns entrarem e outros não. Na célula, qual estrutura faz esse papel de portão?' },
+    { enunciado: 'Bactérias são seres procariontes, enquanto plantas e animais são eucariontes. O que as células das bactérias NÃO possuem?',
+      alts: ['Ribossomos', 'Membrana plasmática', 'Material genético (DNA)', 'Núcleo delimitado por membrana'], correta: 3,
+      porque: ['As bactérias têm ribossomos: sem eles, não fabricariam proteínas.', 'Toda célula tem membrana plasmática, inclusive as bactérias.', 'As bactérias têm DNA; ele só não fica guardado dentro de um núcleo.', ''],
+      explicacao: '"Pro" quer dizer antes e "cário" quer dizer núcleo: os procariontes não têm núcleo organizado, e o DNA fica solto no citoplasma.',
+      simples: 'A diferença principal entre procariontes e eucariontes está no lugar onde o DNA fica guardado.',
+      exemplo: 'Pense em duas casas: numa, os documentos ficam num cofre trancado; na outra, ficam soltos em cima da mesa. As duas têm documentos. O que falta na segunda casa?' },
+    { enunciado: 'Algumas doenças genéticas fazem a célula acumular substâncias que deveriam ser digeridas por enzimas dentro dela. Nesses casos, a organela que não funciona bem é:',
+      alts: ['o complexo golgiense', 'o lisossomo', 'o cloroplasto', 'o ribossomo'], correta: 1,
+      porque: ['O complexo golgiense embala e envia substâncias, mas não é ele que faz a digestão.', '', 'O cloroplasto faz fotossíntese e nem existe nas células humanas.', 'O ribossomo produz proteínas, não as digere.'],
+      explicacao: 'O lisossomo é a "bolsinha" de enzimas digestivas da célula. Quando ele falha, o que deveria ser digerido se acumula.',
+      simples: 'A pergunta quer a organela responsável pela digestão dentro da célula.',
+      exemplo: 'Pense na coleta de lixo de uma cidade. Se ela para, o lixo se acumula nas ruas. Qual organela é o "coletor" que digere o que a célula não quer mais?' }
+  ]
+};
+
+/* Plano semanal inicial (Seg..Dom) */
+const PLANO = ['Matemática', 'Biologia e Química', 'Linguagens e interpretação de texto', 'Física e Matemática aplicada', 'Ciências Humanas', 'Redação ou revisão', null];
+const DIAS_CURTOS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+const DIAS_LONGOS = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+
+/* ---------- Datas ---------- */
+function isoLocal(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function idxSemana(d) { return (d.getDay() + 6) % 7; } // Seg=0 ... Dom=6
+function dataExtenso(d) {
+  const s = d.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+function hojeISO() { return isoLocal(new Date()); }
+function proximoAssunto() {
+  const d = new Date(); d.setDate(d.getDate() + 1);
+  const p = PLANO[idxSemana(d)];
+  return p ? 'Amanhã: ' + p + '.' : 'Amanhã é domingo, dia de descanso. Na segunda: ' + PLANO[0] + '.';
+}
+
+/* ---------- Estado (demonstração local) ---------- */
+function novoEstado() { return { perfil: null, niveis: null, acertosDiag: 0, streak: 5, aulas: 0, ultimaAula: null, subiuHoje: null, acertosUltima: 0 }; }
+function carregar() { try { const t = localStorage.getItem(CHAVE_LOCAL); return t ? JSON.parse(t) : null; } catch (e) { return null; } }
+function salvar() { try { localStorage.setItem(CHAVE_LOCAL, JSON.stringify(S)); } catch (e) { } }
+
+let S = carregar() || novoEstado();
+let tela = S.perfil ? (S.niveis ? 'inicio' : 'diagIntro') : 'boas';
+let telaAnterior = null;
+let cad = { passo: 0, dados: {} };
+let dg = { i: 0, resp: [], sel: null };
+let au = null;
+let veioDaAula = false;
+
+/* ---------- Tema (sol/lua) ---------- */
+function temaInicial() {
+  let t = null;
+  try { t = localStorage.getItem(CHAVE_TEMA); } catch (e) { }
+  if (t === 'dark' || t === 'light') return t;
+  return (window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+}
+let tema = temaInicial();
+function aplicarTema() {
+  document.documentElement.setAttribute('data-theme', tema);
+  const m = document.querySelector('meta[name="theme-color"]');
+  if (m) m.content = tema === 'dark' ? '#0F172A' : '#F8FAFC';
+}
+aplicarTema();
+
+/* ---------- Componentes ---------- */
+function botaoTema() {
+  const escuro = tema === 'dark';
+  return '<button class="btn-icone" data-acao="tema" aria-label="' + (escuro ? 'Ativar modo claro' : 'Ativar modo escuro') + '">' + ic(escuro ? 'sol' : 'lua') + '</button>';
+}
+function topo(acaoVoltar, titulo, extra) {
+  return '<header class="topo"><button class="btn-icone btn-voltar" data-acao="' + acaoVoltar + '" aria-label="Voltar">' + ic('voltar') + '</button>' +
+    '<h1 class="subtitulo" tabindex="-1">' + titulo + '</h1>' + (extra || '') + '</header>';
+}
+function barra(pct, rotulo) {
+  pct = Math.max(0, Math.min(100, Math.round(pct)));
+  return '<div class="barra" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + pct + '" aria-label="' + esc(rotulo) + '"><span style="width:' + pct + '%"></span></div>';
+}
+function balao(texto, id) {
+  return '<div class="balao"' + (id ? ' id="' + id + '" tabindex="-1"' : '') + '><div class="avatar" aria-hidden="true">S</div>' +
+    '<div class="balao-corpo"><span class="balao-nome">Sofia</span>' + texto + '</div></div>';
+}
+function versao() { return '<p class="versao">Sofia v' + VERSAO + '</p>'; }
+function nav(ativa) {
+  return '<nav class="nav" aria-label="Navegação principal"><div class="nav-interno">' +
+    '<button data-acao="irInicio"' + (ativa === 'inicio' ? ' aria-current="page"' : '') + '>' + ic('casa') + '<span>Início</span></button>' +
+    '<button data-acao="irProgresso"' + (ativa === 'progresso' ? ' aria-current="page"' : '') + '>' + ic('grafico') + '<span>Progresso</span></button>' +
+    '</div></nav>';
+}
+function linhaMateria(nome, pct, nota) {
+  return '<div class="materia"><div class="cab"><span>' + esc(nome) + '</span><span class="pct">' + pct + '%' + (nota ? ' · ' + nota : '') + '</span></div>' + barra(pct, nome + ': ' + pct + '%') + '</div>';
+}
+
+/* =================== TELAS =================== */
+const TELAS = {};
+
+/* 01 Boas-vindas */
+TELAS.boas = function () {
+  return '<main class="tela">' +
+    '<div class="topo" style="justify-content:flex-end">' + botaoTema() + '</div>' +
+    '<div class="centro">' +
+      '<div class="logo" aria-hidden="true">S</div>' +
+      '<h1 class="nome-app" tabindex="-1">Sofia</h1>' +
+      '<p class="slogan">Sua professora particular para o ENEM</p>' +
+      '<p class="sec">Um plano de estudos do seu tamanho, uma aula curta por dia e correção que explica o seu erro. Tudo no celular.</p>' +
+    '</div>' +
+    '<div class="acoes">' +
+      '<button class="btn btn-primario" data-acao="comecar">Começar</button>' +
+      '<p class="legenda" style="text-align:center;margin-top:12px">Gratuito · leva cerca de 2 minutos</p>' +
+      versao() +
+    '</div></main>';
+};
+
+/* 02 Cadastro */
+TELAS.cadastro = function () {
+  const p = PERG_CAD[cad.passo], d = cad.dados, total = PERG_CAD.length;
+  const valor = d[p.chave];
+  let corpo;
+  if (p.tipo === 'texto') {
+    corpo = '<div class="campo"><label for="campo-nome" class="legenda">Seu primeiro nome</label>' +
+      '<input id="campo-nome" type="text" autocomplete="given-name" autocapitalize="words" maxlength="30" enterkeyhint="next" value="' + esc(valor || '') + '"></div>';
+  } else {
+    corpo = '<div class="opcoes" role="radiogroup" aria-label="' + esc(p.rotulo) + '">' +
+      p.opcoes.map(function (o) {
+        return '<button class="opcao" role="radio" aria-checked="' + (valor === o) + '" data-acao="cadOpcao" data-valor="' + esc(o) + '"><span class="txt">' + esc(o) + '</span></button>';
+      }).join('') + '</div>';
+  }
+  const pode = cadPodeSeguir();
+  const rotuloBtn = (p.opcional && !valor) ? 'Pular' : (cad.passo === total - 1 ? 'Concluir' : 'Continuar');
+  return '<main class="tela">' + topo('cadVoltar', 'Seu perfil') +
+    '<p class="legenda">Pergunta ' + (cad.passo + 1) + ' de ' + total + (p.opcional ? ' · opcional' : '') + '</p>' +
+    barra((cad.passo + 1) / total * 100, 'Progresso do cadastro') +
+    balao(p.fala(d)) + corpo +
+    '<p class="legenda ajuda">' + esc(p.ajuda) + '</p>' +
+    '<div class="acoes"><button class="btn btn-primario" data-acao="cadContinuar"' + (pode ? '' : ' disabled') + '>' + rotuloBtn + '</button></div>' +
+    '</main>';
+};
+function cadPodeSeguir() {
+  const p = PERG_CAD[cad.passo], v = cad.dados[p.chave];
+  if (p.opcional) return true;
+  if (p.tipo === 'texto') return !!(v && v.trim());
+  return !!v;
+}
+
+/* Diagnóstico — apresentação */
+TELAS.diagIntro = function () {
+  const nome = S.perfil ? esc(S.perfil.nome) : '';
+  return '<main class="tela">' + topo('diagIntroVoltar', 'Diagnóstico') +
+    balao('Agora quero conhecer o que você já sabe, ' + nome + '. São 10 questões rápidas de várias matérias, uma por vez e sem cronômetro.') +
+    balao('Se não souber alguma, toque em <strong>Ainda não sei</strong>. Isso me ajuda tanto quanto um acerto, e não vale nota de nada.') +
+    '<div class="acoes"><button class="btn btn-primario" data-acao="diagIniciar">Começar diagnóstico</button></div></main>';
+};
+
+/* 03 Diagnóstico */
+TELAS.diag = function () {
+  const q = DIAG[dg.i], n = DIAG.length;
+  const rest = Math.max(1, Math.ceil((n - dg.i) * 0.5));
+  const alts = q.alts.map(function (a, k) {
+    return '<button class="opcao" role="radio" aria-checked="' + (dg.sel === k) + '" data-acao="diagSel" data-valor="' + k + '">' +
+      '<span class="letra" aria-hidden="true">' + LETRAS[k] + '</span><span class="txt"><span class="so-leitor">Alternativa ' + LETRAS[k] + ': </span>' + esc(a) + '</span></button>';
+  }).join('');
+  return '<main class="tela">' + topo('diagVoltar', 'Diagnóstico') +
+    '<p class="legenda">Questão ' + (dg.i + 1) + ' de ' + n + ' · cerca de ' + rest + ' min restantes</p>' +
+    barra((dg.i + 1) / n * 100, 'Progresso do diagnóstico') +
+    '<div><span class="etiqueta">' + esc(q.area) + ' · ' + esc(q.assunto) + '</span></div>' +
+    '<p class="enunciado" id="enunciado">' + esc(q.enunciado) + '</p>' +
+    '<p class="legenda">Questão autoral no estilo ENEM</p>' +
+    '<div class="opcoes" role="radiogroup" aria-labelledby="enunciado">' + alts + '</div>' +
+    '<div class="acoes">' +
+      '<button class="btn btn-primario" data-acao="diagConfirmar"' + (dg.sel === null ? ' disabled' : '') + '>Confirmar resposta</button>' +
+      '<button class="btn btn-secundario" data-acao="diagNaoSei">Ainda não sei</button>' +
+    '</div></main>';
+};
+
+/* Diagnóstico — resultado */
+TELAS.diagResultado = function () {
+  const linhas = AREAS.map(function (a) { return linhaMateria(a, S.niveis[a]); }).join('');
+  return '<main class="tela">' +
+    '<h1 class="titulo" tabindex="-1" style="margin-top:16px">Diagnóstico concluído!</h1>' +
+    '<p class="sec">Você acertou ' + S.acertosDiag + ' de ' + DIAG.length + ' questões.</p>' +
+    balao('Obrigada, ' + esc(S.perfil.nome) + '! Agora sei por onde começar. Isso não é nota do ENEM: é só um ponto de partida, e eu vou ajustando a cada aula.') +
+    '<h2 class="subtitulo" style="margin-top:8px">Seu ponto de partida</h2>' + linhas +
+    '<div class="acoes"><button class="btn btn-primario" data-acao="irInicio">Ir para o início</button></div></main>';
+};
+
+/* 04 Início */
+TELAS.inicio = function () {
+  const agora = new Date(), hi = idxSemana(agora), feitaHoje = S.ultimaAula === hojeISO();
+  const segunda = new Date(agora); segunda.setDate(agora.getDate() - hi);
+
+  let semana = '';
+  for (let k = 0; k < 6; k++) {
+    const dia = new Date(segunda); dia.setDate(segunda.getDate() + k);
+    let cls = '', conteudo = '', estado = 'ainda não chegou';
+    if (k < hi || (k === hi && feitaHoje)) { cls = 'feito'; conteudo = ic('check', 20); estado = 'estudado'; }
+    else if (k === hi) { cls = 'hoje'; conteudo = dia.getDate(); estado = 'hoje'; }
+    semana += '<li class="dia' + (k === hi ? ' hoje' : '') + '" aria-label="' + DIAS_LONGOS[k] + ', ' + estado + '">' +
+      '<span class="bola ' + cls + '" aria-hidden="true">' + conteudo + '</span><span aria-hidden="true">' + DIAS_CURTOS[k] + '</span></li>';
+  }
+
+  let cartaoAula;
+  if (hi === 6) {
+    cartaoAula = '<section class="cartao cartao-destaque"><p class="rotulo">HOJE</p><h2 class="titulo">Dia de descanso</h2>' +
+      '<p class="sec">Descansar também faz parte do estudo. Amanhã: ' + PLANO[0] + '.</p></section>';
+  } else if (feitaHoje) {
+    cartaoAula = '<section class="cartao cartao-destaque"><p class="rotulo">AULA DE HOJE</p><h2 class="titulo">Aula concluída ' + '<span class="icone-ok">' + ic('check', 22) + '</span></h2>' +
+      '<p class="sec" style="margin-bottom:16px">' + proximoAssunto() + '</p>' +
+      '<button class="btn btn-secundario" data-acao="aulaIniciar">Refazer a aula (demonstração)</button></section>';
+  } else {
+    cartaoAula = '<section class="cartao cartao-destaque"><p class="rotulo">AULA DE HOJE</p>' +
+      '<h2 class="titulo">' + AULA.materia + ' · ' + AULA.assunto + '</h2>' +
+      '<p class="info-linha">' + ic('relogio', 20) + '<span>' + AULA.duracao + '</span></p>' +
+      '<button class="btn btn-primario" data-acao="aulaIniciar">Começar aula de hoje</button></section>';
+  }
+
+  const ano = (S.perfil.ano || '').replace('ENEM ', '');
+  const fase = ano === '2026' ? 'Fase 1: conhecer a prova do ENEM 2026.' : 'Fase 2: preparação para o ENEM ' + esc(ano) + '.';
+
+  return '<main class="tela com-nav">' +
+    '<header class="cab-inicio"><div><h1 class="titulo" tabindex="-1">Olá, ' + esc(S.perfil.nome) + '!</h1>' +
+      '<p class="sec">' + dataExtenso(agora) + '</p></div>' + botaoTema() + '</header>' +
+    '<section class="cartao cartao-conquista">' + ic('chama') +
+      '<div><p class="subtitulo">' + S.streak + ' dias seguidos</p><p class="legenda">Domingo de descanso não quebra a sequência</p></div></section>' +
+    cartaoAula +
+    '<h2 class="subtitulo" style="margin-top:24px">Sua semana</h2>' +
+    '<ul class="semana">' + semana + '</ul>' +
+    '<p class="sec" style="margin-top:16px">' + fase + ' Domingo é dia de descanso.</p>' +
+    versao() + '</main>' + nav('inicio');
+};
+
+/* 05 Aula */
+TELAS.aula = function () {
+  const q = AULA.questoes[au.i], n = AULA.questoes.length;
+  const alts = q.alts.map(function (a, k) {
+    let cls = '', selo = '', checked = au.sel === k;
+    if (au.respondida) {
+      if (k === q.correta) { cls = ' correta'; selo = '<span class="selo">' + ic('check', 18) + 'Correta</span>'; }
+      else if (k === au.sel) { cls = ' incorreta'; selo = '<span class="selo">' + ic('x', 18) + 'Incorreta</span>'; }
+      checked = false;
+    }
+    return '<button class="opcao' + cls + '" role="radio" aria-checked="' + checked + '" data-acao="aulaSel" data-valor="' + k + '"' + (au.respondida ? ' disabled' : '') + '>' +
+      '<span class="letra" aria-hidden="true">' + LETRAS[k] + '</span><span class="txt"><span class="so-leitor">Alternativa ' + LETRAS[k] + ': </span>' + esc(a) + '</span>' + selo + '</button>';
+  }).join('');
+
+  let retorno = '';
+  if (au.respondida) {
+    const certo = au.sel === q.correta;
+    retorno = balao((certo ? '<strong>Isso!</strong> ' : '<strong>Quase!</strong> ' + esc(q.porque[au.sel]) + ' ') + esc(q.explicacao), 'retorno');
+  }
+  const extras = au.extras.map(function (t) { return balao(esc(t)); }).join('');
+
+  let principal;
+  if (!au.respondida) principal = '<button class="btn btn-primario" data-acao="aulaConfirmar"' + (au.sel === null ? ' disabled' : '') + '>Confirmar resposta</button>';
+  else if (au.i < n - 1) principal = '<button class="btn btn-primario" data-acao="aulaProxima">Próxima questão</button>';
+  else principal = '<button class="btn btn-primario" data-acao="aulaConcluir">Concluir aula</button>';
+
+  return '<main class="tela">' + topo('aulaVoltar', AULA.materia + ' · ' + AULA.assunto) +
+    '<p class="legenda">Questão ' + (au.i + 1) + ' de ' + n + ' · autoral, estilo ENEM</p>' +
+    barra((au.i + 1) / n * 100, 'Progresso da aula') +
+    (au.i === 0 && !au.respondida ? balao(esc(AULA.abertura)) : '') +
+    '<p class="enunciado" id="enunciado" style="margin-top:16px">' + esc(q.enunciado) + '</p>' +
+    '<div class="opcoes" role="radiogroup" aria-labelledby="enunciado">' + alts + '</div>' +
+    '<div aria-live="polite">' + retorno + extras + '</div>' +
+    '<div class="acoes"><div class="linha-btns">' +
+      '<button class="btn btn-secundario" data-acao="aulaNaoEntendi">Não entendi</button>' +
+      '<button class="btn btn-secundario" data-acao="aulaOutroExemplo">Outro exemplo</button>' +
+    '</div>' + principal + '</div></main>';
+};
+
+/* 06 Progresso */
+TELAS.progresso = function () {
+  const n = AULA.questoes.length;
+  const subiu = S.subiuHoje === hojeISO();
+  const linhas = AREAS.map(function (a) {
+    return linhaMateria(a, S.niveis[a], (a === AULA.materia && subiu) ? 'subiu hoje' : '');
+  }).join('');
+
+  let cab, cartoes, fala;
+  if (veioDaAula) {
+    cab = '<header class="cab-inicio"><div><h1 class="titulo" tabindex="-1">Aula concluída!</h1><p class="sec">' + AULA.materia + ' · ' + AULA.assunto + ' · hoje</p></div>' + botaoTema() + '</header>';
+    cartoes = '<div class="cartao"><span class="icone-ok">' + ic('check') + '</span><span class="numero">' + S.acertosUltima + ' de ' + n + '</span><span class="legenda">questões certas</span></div>';
+    fala = (S.acertosUltima >= 3 ? 'Você avançou em ' + AULA.assunto + '! ' : 'Hoje foi um bom treino, e errar faz parte de aprender. Vou revisar isso com você. ') + proximoAssunto();
+  } else {
+    cab = '<header class="cab-inicio"><div><h1 class="titulo" tabindex="-1">Seu progresso</h1><p class="sec">Você comparada a você mesma</p></div>' + botaoTema() + '</header>';
+    cartoes = '<div class="cartao"><span class="icone-ok">' + ic('check') + '</span><span class="numero">' + S.aulas + '</span><span class="legenda">' + (S.aulas === 1 ? 'aula concluída' : 'aulas concluídas') + '</span></div>';
+    fala = S.ultimaAula === hojeISO() ? 'Aula de hoje concluída. ' + proximoAssunto() : 'Continue no seu ritmo. Hoje: ' + AULA.materia + ' · ' + AULA.assunto + '.';
+  }
+  return '<main class="tela com-nav">' + cab +
+    '<div class="dupla">' + cartoes +
+      '<div class="cartao cartao-conquista">' + ic('chama') + '<span class="numero">' + S.streak + ' dias</span><span class="legenda">seguidos</span></div></div>' +
+    balao(esc(fala)) +
+    '<h2 class="subtitulo" style="margin-top:8px">Sua evolução</h2>' +
+    '<p class="legenda">Você comparada a você mesma, sem rankings</p>' + linhas +
+    '<button class="btn-link" data-acao="reiniciar">Reiniciar demonstração</button>' +
+    versao() + '</main>' + nav('progresso');
+};
+
+/* =================== AÇÕES =================== */
+function calcularNiveis(resp) {
+  const tot = {}, ac = {}, niv = {};
+  let total = 0;
+  DIAG.forEach(function (q, i) {
+    tot[q.area] = (tot[q.area] || 0) + 1;
+    if (resp[i] === q.correta) { ac[q.area] = (ac[q.area] || 0) + 1; total++; }
+  });
+  AREAS.forEach(function (a) { niv[a] = tot[a] ? Math.round((ac[a] || 0) / tot[a] * 100) : 0; });
+  return { niveis: niv, acertos: total };
+}
+function avancarDiag() {
+  dg.i++;
+  dg.sel = dg.resp[dg.i] != null ? dg.resp[dg.i] : null;
+  if (dg.i >= DIAG.length) {
+    const r = calcularNiveis(dg.resp);
+    S.niveis = r.niveis; S.acertosDiag = r.acertos; salvar();
+    ir('diagResultado');
+  } else render();
+}
+function ir(t) { tela = t; render(); }
+
+const ACOES = {
+  tema: function () {
+    tema = tema === 'dark' ? 'light' : 'dark';
+    try { localStorage.setItem(CHAVE_TEMA, tema); } catch (e) { }
+    aplicarTema(); render('[data-acao="tema"]');
+  },
+  comecar: function () { cad = { passo: 0, dados: {} }; ir('cadastro'); },
+
+  cadOpcao: function (v) { cad.dados[PERG_CAD[cad.passo].chave] = v; render('[data-acao="cadOpcao"][aria-checked="true"]'); },
+  cadContinuar: function () {
+    if (!cadPodeSeguir()) return;
+    if (cad.passo < PERG_CAD.length - 1) { cad.passo++; telaAnterior = null; render(); }
+    else {
+      const d = cad.dados;
+      S.perfil = { nome: d.nome.trim(), curso: d.curso, ano: d.ano, tempo: d.tempo, adaptacao: d.adaptacao || null };
+      salvar(); ir('diagIntro');
+    }
+  },
+  cadVoltar: function () { if (cad.passo > 0) { cad.passo--; telaAnterior = null; render(); } else ir('boas'); },
+
+  diagIntroVoltar: function () {
+    cad = { passo: PERG_CAD.length - 1, dados: Object.assign({}, S.perfil || {}) };
+    ir('cadastro');
+  },
+  diagIniciar: function () { dg = { i: 0, resp: [], sel: null }; ir('diag'); },
+  diagSel: function (v) { dg.sel = +v; render('[data-acao="diagSel"][data-valor="' + v + '"]'); },
+  diagConfirmar: function () { if (dg.sel === null) return; dg.resp[dg.i] = dg.sel; telaAnterior = null; avancarDiag(); },
+  diagNaoSei: function () { dg.resp[dg.i] = null; telaAnterior = null; avancarDiag(); },
+  diagVoltar: function () {
+    if (dg.i > 0) { dg.i--; dg.sel = dg.resp[dg.i] != null ? dg.resp[dg.i] : null; telaAnterior = null; render(); }
+    else ir('diagIntro');
+  },
+
+  irInicio: function () { veioDaAula = false; ir('inicio'); },
+  irProgresso: function () { veioDaAula = false; ir('progresso'); },
+
+  aulaIniciar: function () { au = { i: 0, sel: null, respondida: false, acertos: 0, extras: [] }; ir('aula'); },
+  aulaSel: function (v) { if (au.respondida) return; au.sel = +v; render('[data-acao="aulaSel"][data-valor="' + v + '"]'); },
+  aulaConfirmar: function () {
+    if (au.sel === null || au.respondida) return;
+    au.respondida = true;
+    if (au.sel === AULA.questoes[au.i].correta) au.acertos++;
+    render('#retorno');
+  },
+  aulaNaoEntendi: function () {
+    const t = AULA.questoes[au.i].simples;
+    if (au.extras.indexOf(t) < 0) au.extras.push(t);
+    render('[data-acao="aulaNaoEntendi"]');
+  },
+  aulaOutroExemplo: function () {
+    const t = AULA.questoes[au.i].exemplo;
+    if (au.extras.indexOf(t) < 0) au.extras.push(t);
+    render('[data-acao="aulaOutroExemplo"]');
+  },
+  aulaProxima: function () { au.i++; au.sel = null; au.respondida = false; au.extras = []; telaAnterior = null; render(); },
+  aulaConcluir: function () {
+    const hoje = hojeISO();
+    if (S.ultimaAula !== hoje) { S.streak++; S.ultimaAula = hoje; }
+    S.aulas++;
+    S.acertosUltima = au.acertos;
+    S.niveis[AULA.materia] = Math.min(100, (S.niveis[AULA.materia] || 0) + au.acertos * 4);
+    S.subiuHoje = hoje;
+    salvar();
+    veioDaAula = true; ir('progresso');
+  },
+  aulaVoltar: function () {
+    if ((au.i > 0 || au.respondida) && !confirm('Sair da aula agora? As respostas desta aula não serão guardadas.')) return;
+    ir('inicio');
+  },
+
+  reiniciar: function () {
+    if (!confirm('Apagar os dados de demonstração e começar do zero?')) return;
+    try { localStorage.removeItem(CHAVE_LOCAL); } catch (e) { }
+    S = novoEstado(); veioDaAula = false; ir('boas');
+  }
+};
+
+/* =================== RENDER =================== */
+const app = document.getElementById('app');
+function render(foco) {
+  app.innerHTML = TELAS[tela]();
+  if (tela !== telaAnterior) {
+    window.scrollTo(0, 0);
+    const h = app.querySelector('h1');
+    if (h) h.focus({ preventScroll: true });
+    telaAnterior = tela;
+    const campo = app.querySelector('#campo-nome');
+    if (campo && !campo.value) campo.focus({ preventScroll: true });
+  } else if (foco) {
+    const el = app.querySelector(foco);
+    if (el) el.focus({ preventScroll: foco !== '#retorno' });
+    if (foco === '#retorno' && el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+}
+app.addEventListener('click', function (e) {
+  const b = e.target.closest('[data-acao]');
+  if (!b || b.disabled) return;
+  const f = ACOES[b.dataset.acao];
+  if (f) f(b.dataset.valor);
+});
+app.addEventListener('input', function (e) {
+  if (e.target.id === 'campo-nome') {
+    cad.dados.nome = e.target.value;
+    const btn = app.querySelector('[data-acao="cadContinuar"]');
+    if (btn) btn.disabled = !cadPodeSeguir();
+  }
+});
+app.addEventListener('keydown', function (e) {
+  if (e.target.id === 'campo-nome' && e.key === 'Enter') { e.preventDefault(); ACOES.cadContinuar(); }
+});
+
+/* ---------- PWA: manifesto embutido (instalar na tela inicial) ---------- */
+try {
+  const icone = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Ccircle cx='256' cy='256' r='256' fill='%231D4ED8'/%3E%3Ctext x='256' y='340' font-family='Arial,sans-serif' font-size='260' font-weight='700' fill='white' text-anchor='middle'%3ES%3C/text%3E%3C/svg%3E";
+  const base = location.href.split('#')[0].split('?')[0];
+  const manifesto = { name: 'Sofia — professora para o ENEM', short_name: 'Sofia', start_url: base, scope: base.replace(/[^/]*$/, ''),
+    display: 'standalone', background_color: '#F8FAFC', theme_color: '#1D4ED8',
+    icons: [{ src: icone, sizes: '512x512', type: 'image/svg+xml', purpose: 'any' }] };
+  const link = document.createElement('link');
+  link.rel = 'manifest';
+  link.href = URL.createObjectURL(new Blob([JSON.stringify(manifesto)], { type: 'application/manifest+json' }));
+  document.head.appendChild(link);
+} catch (e) { }
+
+render();
+})();
+</script>
+</body>
+</html>
