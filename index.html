@@ -178,6 +178,30 @@ h1:focus,h2:focus,[tabindex="-1"]:focus{outline:none}
 .nav button[aria-current="page"]{color:var(--primaria);font-weight:600}
 
 .versao{text-align:center;font-size:.875rem;color:var(--texto2);margin-top:16px}
+.versao .btn-link{display:inline;min-height:0;padding:4px 6px;margin:0;font-size:.875rem}
+/* Aviso de versão nova */
+#aviso-versao{position:fixed;left:12px;right:12px;top:calc(12px + env(safe-area-inset-top));z-index:50;background:var(--primaria);color:var(--sobre-primaria);border-radius:14px;padding:12px 14px;display:flex;gap:10px;align-items:center;justify-content:space-between;box-shadow:0 8px 24px rgba(0,0,0,.25);max-width:480px;margin:0 auto}
+#aviso-versao button{background:var(--sobre-primaria);color:var(--primaria);border:none;border-radius:10px;padding:10px 14px;font-weight:700;font-size:.95rem;cursor:pointer;white-space:nowrap}
+/* Área do administrador */
+.adm-filtros{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+.adm-filtros button{flex:1;min-height:40px;border-radius:10px;border:1px solid var(--borda);background:var(--superficie);color:var(--texto);font:inherit;font-size:.875rem;font-weight:600;cursor:pointer}
+.adm-filtros button[aria-pressed="true"]{background:var(--primaria);color:var(--sobre-primaria);border-color:var(--primaria)}
+.adm-lista{display:flex;flex-direction:column;gap:10px;margin-top:12px}
+.adm-cab{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.adm-nome{font-weight:700}
+.adm-info{font-size:.875rem;color:var(--texto2);margin-top:2px}
+.adm-selo{font-size:.75rem;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap}
+.adm-selo.pendente{background:#FEF3C7;color:#92400E}
+.adm-selo.aprovado{background:var(--sucesso-suave);color:var(--sucesso)}
+.adm-selo.bloqueado{background:var(--erro-suave);color:var(--erro)}
+.adm-botoes{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.adm-botoes button{flex:1;min-width:96px;min-height:40px;border-radius:10px;border:1px solid var(--borda);background:var(--superficie);color:var(--texto);font:inherit;font-size:.875rem;font-weight:600;cursor:pointer}
+.adm-botoes .ok{background:var(--sucesso);color:var(--sobre-sucesso);border-color:var(--sucesso)}
+.adm-botoes .perigo{color:var(--erro);border-color:var(--erro)}
+.adm-botoes .perigo.confirmar{background:var(--erro);color:var(--sobre-erro)}
+.adm-pin{display:flex;gap:6px;margin-top:10px}
+.adm-pin input{flex:1;min-height:44px;padding:8px 12px;border:1px solid var(--borda);border-radius:10px;background:var(--superficie);color:var(--texto);font:inherit;font-size:1.1rem;letter-spacing:.4em}
+.adm-pin button{min-height:44px;padding:0 14px;border-radius:10px;border:none;background:var(--primaria);color:var(--sobre-primaria);font-weight:700;cursor:pointer}
 .so-leitor{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
 </style>
@@ -192,7 +216,7 @@ h1:focus,h2:focus,[tabindex="-1"]:focus{outline:none}
 /* =========================================================
    SOFIA — Etapa 4 (aula de verdade com a IA)
    ========================================================= */
-const VERSAO = '0.4.0';
+const VERSAO = '0.5.0';
 
 /* ---------- Supabase (já preenchido) ---------- */
 const SUPABASE_URL   = 'https://ghjbljypxksubmcsvaig.supabase.co';
@@ -436,12 +460,12 @@ function calcularSequencia(dias) {
 function textoSequencia(n) { return n === 1 ? '1 dia seguido' : n + ' dias seguidos'; }
 
 /* =================== CONEXÃO COM O SUPABASE =================== */
-async function rpc(nome, params) {
+async function rpc(nome, params, cracha) {
   let r;
   try {
     r = await fetch(SUPABASE_URL + '/rest/v1/rpc/' + nome, {
       method: 'POST',
-      headers: { 'apikey': SUPABASE_CHAVE, 'Content-Type': 'application/json', 'Content-Profile': SCHEMA, 'Accept-Profile': SCHEMA },
+      headers: Object.assign({ 'apikey': SUPABASE_CHAVE, 'Content-Type': 'application/json', 'Content-Profile': SCHEMA, 'Accept-Profile': SCHEMA }, cracha ? { 'Authorization': 'Bearer ' + cracha } : {}),
       body: JSON.stringify(params || {})
     });
   } catch (e) {
@@ -472,6 +496,8 @@ let tela = 'carregando';
 let telaAnterior = null;
 let cad = { passo: 0, dados: {} };
 let ent = { usuario: '', pin: '', esqueci: false };
+let pend = null;   // conta criada, aguardando aprovação
+let adm = { email: '', senha: '', token: null, lista: [], filtro: 'pendente', pinPara: null, pin: '', confirmar: null, aviso: null };
 let dg = { i: 0, resp: [], sel: null };
 let au = null;
 let veioDaAula = false;
@@ -544,7 +570,7 @@ function botao(acao, texto, tipo, desabilitado) {
   return '<button class="btn btn-' + (tipo || 'primario') + '" data-acao="' + acao + '"' + (bloq ? ' disabled' : '') + '>' +
     (ocupado && tipo !== 'secundario' ? 'Aguarde…' : texto) + '</button>';
 }
-function versao() { return '<p class="versao">Sofia v' + VERSAO + '</p>'; }
+function versao() { return '<p class="versao">Sofia v' + VERSAO + ' · <button class="btn-link" data-acao="atualizarApp">Atualizar app</button></p>'; }
 function nav(ativa) {
   return '<nav class="nav" aria-label="Navegação principal"><div class="nav-interno">' +
     '<button data-acao="irInicio"' + (ativa === 'inicio' ? ' aria-current="page"' : '') + '>' + ic('casa') + '<span>Início</span></button>' +
@@ -590,6 +616,7 @@ TELAS.boas = function () {
       '<p class="legenda" style="text-align:center;margin-top:12px">Gratuito · leva cerca de 2 minutos</p>' +
       '<button class="btn btn-secundario" data-acao="irEntrar" style="margin-top:16px">Já tenho cadastro</button>' +
       versao() +
+      '<button class="btn-link" data-acao="irAdm" style="font-size:.8rem;font-weight:500;margin-top:0">Área do administrador</button>' +
     '</div></main>';
 };
 
@@ -654,6 +681,66 @@ TELAS.contaCriada = function () {
     balao('Anote o seu usuário junto com o seu PIN. Com os dois você entra no app em qualquer celular.') +
     '<section class="cartao cartao-destaque"><p class="rotulo">SEU USUÁRIO</p><p class="usuario-grande">' + esc(S.perfil.usuario) + '</p></section>' +
     '<div class="acoes">' + botao('irDiagIntro', 'Continuar') + '</div></main>';
+};
+
+/* Conta aguardando aprovação */
+TELAS.aguardando = function () {
+  const p = pend || {};
+  return '<main class="tela">' +
+    '<div class="topo" style="justify-content:flex-end">' + botaoTema() + '</div>' +
+    '<h1 class="titulo" tabindex="-1">Aguardando aprovação</h1>' +
+    balao('Olá' + (p.nome ? ', ' + esc(p.nome) : '') + '! Sua conta foi criada e está <strong>aguardando a aprovação</strong> do responsável pelo app.<br><br>Assim que ela for aprovada, é só entrar com o seu usuário e o seu PIN.') +
+    '<section class="cartao cartao-destaque"><p class="rotulo">SEU USUÁRIO</p><p class="usuario-grande">' + esc(p.usuario || '') + '</p></section>' +
+    '<p class="legenda" style="margin-top:12px">Anote o usuário junto com o PIN que você criou.</p>' +
+    '<div class="acoes">' + caixaErro() + botao('aguardandoEntrar', 'Já fui aprovada · Entrar') +
+    '<button class="btn btn-secundario" data-acao="entrarVoltar">Voltar ao início</button>' + versao() + '</div></main>';
+};
+
+/* Administrador: login */
+TELAS.admLogin = function () {
+  const pode = adm.email.trim() && adm.senha;
+  return '<main class="tela">' + topo('entrarVoltar', 'Administrador') +
+    balao('Entre com o seu e-mail e senha de administrador para aprovar os cadastros.') +
+    '<div class="campo"><label for="adm-email" class="legenda">E-mail</label>' +
+      '<input id="adm-email" type="email" autocomplete="username" autocapitalize="none" spellcheck="false" value="' + esc(adm.email) + '"></div>' +
+    '<div class="campo"><label for="adm-senha" class="legenda">Senha</label>' +
+      '<input id="adm-senha" type="password" autocomplete="current-password" value=""></div>' +
+    '<div class="acoes">' + caixaErro() + botao('admEntrar', 'Entrar', 'primario', !pode) + versao() + '</div></main>';
+};
+
+/* Administrador: lista de contas */
+TELAS.adm = function () {
+  const nomes = { pendente: 'Aguardando', aprovado: 'Aprovadas', bloqueado: 'Bloqueadas', todos: 'Todas' };
+  const cont = function (f) { return adm.lista.filter(function (a) { return f === 'todos' || a.situacao === f; }).length; };
+  const lista = adm.lista.filter(function (a) { return adm.filtro === 'todos' || a.situacao === adm.filtro; });
+  const selo = { pendente: 'Aguardando', aprovado: 'Aprovada', bloqueado: 'Bloqueada' };
+  return '<main class="tela">' +
+    '<header class="topo"><button class="btn-icone btn-voltar" data-acao="admSair" aria-label="Sair da área do administrador">' + ic('voltar') + '</button>' +
+    '<h1 class="subtitulo" tabindex="-1" style="flex:1">Cadastros</h1>' + botaoTema() + '</header>' +
+    '<div class="adm-filtros" role="group" aria-label="Filtrar contas">' +
+      ['pendente', 'aprovado', 'bloqueado', 'todos'].map(function (f) {
+        return '<button data-acao="admFiltro" data-valor="' + f + '" aria-pressed="' + (adm.filtro === f) + '">' + nomes[f] + ' (' + cont(f) + ')</button>';
+      }).join('') + '</div>' +
+    (adm.aviso ? '<p class="legenda" role="status" style="margin-top:10px;color:var(--sucesso);font-weight:600">' + esc(adm.aviso) + '</p>' : '') +
+    caixaErro() +
+    '<div class="adm-lista">' + (lista.length ? lista.map(function (a) {
+      const conf = adm.confirmar === a.id;
+      return '<section class="cartao" aria-label="' + esc(a.nome) + '">' +
+        '<div class="adm-cab"><div><div class="adm-nome">' + esc(a.nome) + '</div>' +
+        '<div class="adm-info">usuário <strong>' + esc(a.usuario) + '</strong>' + (a.curso ? ' · ' + esc(a.curso) : '') + (a.ano_enem ? ' · ENEM ' + a.ano_enem : '') + '</div>' +
+        '<div class="adm-info">Cadastro em ' + esc(a.criado_em || '') + ' · ' + (a.aulas || 0) + ' aula(s)' + (a.ultimo_dia ? ' · estudou em ' + esc(a.ultimo_dia) : '') + '</div></div>' +
+        '<span class="adm-selo ' + a.situacao + '">' + selo[a.situacao] + '</span></div>' +
+        '<div class="adm-botoes">' +
+          (a.situacao !== 'aprovado' ? '<button class="ok" data-acao="admAprovar" data-valor="' + a.id + '">Aprovar</button>' : '') +
+          (a.situacao !== 'bloqueado' ? '<button data-acao="admBloquear" data-valor="' + a.id + '">Bloquear</button>' : '') +
+          '<button data-acao="admPinAbrir" data-valor="' + a.id + '">PIN novo</button>' +
+          '<button class="perigo' + (conf ? ' confirmar' : '') + '" data-acao="admExcluir" data-valor="' + a.id + '">' + (conf ? 'Confirmar exclusão' : 'Excluir') + '</button>' +
+        '</div>' +
+        (adm.pinPara === a.id ? '<div class="adm-pin"><input id="adm-pin" type="password" inputmode="numeric" maxlength="4" placeholder="4 números" aria-label="PIN novo para ' + esc(a.nome) + '" value="' + esc(adm.pin) + '"><button data-acao="admPinSalvar" data-valor="' + a.id + '">Salvar</button></div>' : '') +
+        '</section>';
+    }).join('') : '<p class="sec" style="text-align:center;margin-top:24px">Nenhuma conta aqui.</p>') + '</div>' +
+    '<div class="acoes"><button class="btn btn-secundario" data-acao="admRecarregar">Atualizar lista</button>' +
+    '<button class="btn btn-secundario" data-acao="admSair">Sair da área do administrador</button>' + versao() + '</div></main>';
 };
 
 /* Diagnóstico — apresentação */
@@ -986,6 +1073,46 @@ function avancarDiag() {
   telaAnterior = null; render();
 }
 
+/* ---------- Administrador ---------- */
+async function admExecutar(tarefa) {
+  await executar(async function () {
+    try { await tarefa(); }
+    catch (e) {
+      if (/erro 401|JWT/i.test(e.message)) { adm.token = null; ir('admLogin', 'Sua entrada de administrador expirou. Entre de novo.'); return; }
+      throw e;
+    }
+    const r = await rpc('adm_lista', {}, adm.token);
+    adm.lista = r.alunas || [];
+  });
+}
+function admCarregar() { admExecutar(async function () { }); }
+function admMudar(id, situacao, aviso) {
+  admExecutar(async function () {
+    await rpc('adm_situacao', { p_id: id, p_situacao: situacao }, adm.token);
+    adm.confirmar = null; adm.pinPara = null; adm.aviso = aviso;
+  });
+}
+
+/* ---------- Atualização do app ---------- */
+async function atualizarAgora() {
+  try { if ('serviceWorker' in navigator) { const rs = await navigator.serviceWorker.getRegistrations(); await Promise.all(rs.map(function (r) { return r.unregister(); })); } } catch (e) { }
+  try { if (window.caches) { const ks = await caches.keys(); await Promise.all(ks.map(function (k) { return caches.delete(k); })); } } catch (e) { }
+  location.replace(location.href.split('#')[0].split('?')[0] + '?v=' + Date.now());
+}
+async function verificarVersao() {
+  try {
+    const r = await fetch(location.href.split('#')[0].split('?')[0] + '?nc=' + Date.now(), { cache: 'no-store' });
+    if (!r.ok) return;
+    const m = (await r.text()).match(/const VERSAO = '([^']+)'/);
+    if (!m || m[1] === VERSAO || document.getElementById('aviso-versao')) return;
+    const d = document.createElement('div');
+    d.id = 'aviso-versao'; d.setAttribute('role', 'status');
+    d.innerHTML = '<span>Nova versão da Sofia (v' + esc(m[1]) + ')</span><button type="button">Atualizar agora</button>';
+    d.querySelector('button').addEventListener('click', atualizarAgora);
+    document.body.appendChild(d);
+  } catch (e) { }
+}
+
 const ACOES = {
   tema: function () {
     tema = tema === 'dark' ? 'light' : 'dark';
@@ -997,11 +1124,56 @@ const ACOES = {
   irEntrar: function () { ent = { usuario: '', pin: '', esqueci: false }; ir('entrar'); },
   entrarVoltar: function () { ir('boas'); },
   esqueciPin: function () { ent.esqueci = true; render(); },
+  aguardandoEntrar: function () { ent = { usuario: pend ? pend.usuario : '', pin: '', esqueci: false }; ir('entrar'); },
+  atualizarApp: function () { atualizarAgora(); },
+
+  irAdm: function () { if (adm.token) { ir('adm'); admCarregar(); } else ir('admLogin'); },
+  admEntrar: function () {
+    if (!(adm.email.trim() && adm.senha)) return;
+    executar(async function () {
+      let r, d;
+      try {
+        r = await fetch(SUPABASE_URL + '/auth/v1/token?grant_type=password', {
+          method: 'POST', headers: { 'apikey': SUPABASE_CHAVE, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: adm.email.trim(), password: adm.senha })
+        });
+        d = await r.json().catch(function () { return null; });
+      } catch (e) { throw new Error('Sem conexão com a internet. Confira e tente de novo.'); }
+      if (!r.ok || !d || !d.access_token) throw new Error('E-mail ou senha incorretos.');
+      const lista = await rpc('adm_lista', {}, d.access_token);
+      adm.senha = ''; adm.token = d.access_token; adm.lista = lista.alunas || [];
+      adm.filtro = adm.lista.some(function (a) { return a.situacao === 'pendente'; }) ? 'pendente' : 'todos';
+      adm.aviso = null; adm.confirmar = null; adm.pinPara = null;
+      ir('adm');
+    });
+  },
+  admFiltro: function (f) { adm.filtro = f; adm.confirmar = null; adm.pinPara = null; render(); },
+  admRecarregar: function () { adm.aviso = null; admCarregar(); },
+  admAprovar: function (id) { admMudar(id, 'aprovado', 'Conta aprovada.'); },
+  admBloquear: function (id) { admMudar(id, 'bloqueado', 'Conta bloqueada.'); },
+  admPinAbrir: function (id) { adm.pinPara = adm.pinPara === id ? null : id; adm.pin = ''; adm.confirmar = null; render('#adm-pin'); },
+  admPinSalvar: function (id) {
+    if (!/^\d{4}$/.test(adm.pin)) { erroMsg = 'O PIN precisa ter 4 números.'; render('#erro'); return; }
+    admExecutar(async function () {
+      await rpc('adm_novo_pin', { p_id: id, p_pin: adm.pin }, adm.token);
+      adm.pinPara = null; adm.pin = ''; adm.aviso = 'PIN novo salvo. Passe o PIN para a aluna.';
+    });
+  },
+  admExcluir: function (id) {
+    if (adm.confirmar !== id) { adm.confirmar = id; adm.pinPara = null; render(); return; }
+    admExecutar(async function () {
+      await rpc('adm_excluir', { p_id: id }, adm.token);
+      adm.confirmar = null; adm.aviso = 'Conta excluída.';
+    });
+  },
+  admSair: function () { adm = { email: adm.email, senha: '', token: null, lista: [], filtro: 'pendente', pinPara: null, pin: '', confirmar: null, aviso: null }; ir('boas'); },
   entrar: function () {
     if (!(ent.usuario.trim() && /^\d{4}$/.test(ent.pin))) return;
     executar(async function () {
       const r = await rpc('entrar', { p_usuario: ent.usuario.trim(), p_pin: ent.pin });
-      token = r.token; gravarToken(token); ent.pin = '';
+      ent.pin = '';
+      if (r.pendente) { pend = { usuario: r.usuario, nome: r.nome }; ir('aguardando'); return; }
+      token = r.token; gravarToken(token);
       await carregarDados();
       ir(S.diagFeito ? 'inicio' : 'diagIntro');
     });
@@ -1018,8 +1190,9 @@ const ACOES = {
         p_ano: parseInt(String(d.ano).replace(/\D/g, ''), 10) || null,
         p_tempo: d.tempo, p_adaptacao: d.adaptacao || null, p_pin: d.pin
       });
-      token = r.token; gravarToken(token);
       cad = { passo: 0, dados: {} };          // o PIN não fica guardado no celular
+      if (r.pendente || !r.token) { pend = { usuario: r.usuario, nome: r.nome }; ir('aguardando'); return; }
+      token = r.token; gravarToken(token);
       await carregarDados();
       ir('contaCriada');
     });
@@ -1130,7 +1303,7 @@ function render(foco) {
   if (tela !== telaAnterior) {
     window.scrollTo(0, 0);
     telaAnterior = tela;
-    const campo = app.querySelector('#campo-nome, #campo-usuario, #campo-pin');
+    const campo = app.querySelector('#campo-nome, #campo-usuario, #campo-pin, #adm-email');
     if (campo && !campo.value) campo.focus({ preventScroll: true });
     else { const h = app.querySelector('h1'); if (h) h.focus({ preventScroll: true }); }
   }
@@ -1161,6 +1334,13 @@ app.addEventListener('input', function (e) {
   else if (id === 'campo-pin2') cad.dados.pin2 = v;
   else if (id === 'campo-usuario') ent.usuario = v;
   else if (id === 'campo-pin-entrar') ent.pin = v;
+  else if (id === 'adm-email' || id === 'adm-senha') {
+    if (id === 'adm-email') adm.email = v; else adm.senha = v;
+    const b = app.querySelector('[data-acao="admEntrar"]');
+    if (b) b.disabled = ocupado || !(adm.email.trim() && adm.senha);
+    return;
+  }
+  else if (id === 'adm-pin') { e.target.value = v.replace(/\D/g, '').slice(0, 4); adm.pin = e.target.value; return; }
   else if (id === 'campo-aberta') {
     au.textoAberto = v;
     const b = app.querySelector('[data-acao="aulaEnviarAberta"]');
@@ -1187,6 +1367,9 @@ app.addEventListener('keydown', function (e) {
   else if (id === 'campo-pin') { e.preventDefault(); const p2 = app.querySelector('#campo-pin2'); if (p2) p2.focus(); }
   else if (id === 'campo-usuario') { e.preventDefault(); const p = app.querySelector('#campo-pin-entrar'); if (p) p.focus(); }
   else if (id === 'campo-pin-entrar') { e.preventDefault(); ACOES.entrar(); }
+  else if (id === 'adm-email') { e.preventDefault(); const p = app.querySelector('#adm-senha'); if (p) p.focus(); }
+  else if (id === 'adm-senha') { e.preventDefault(); ACOES.admEntrar(); }
+  else if (id === 'adm-pin') { e.preventDefault(); if (adm.pinPara) ACOES.admPinSalvar(adm.pinPara); }
 });
 
 /* ---------- PWA: manifesto embutido (instalar na tela inicial) ---------- */
@@ -1216,6 +1399,9 @@ async function iniciar() {
   }
 }
 iniciar();
+setTimeout(verificarVersao, 3000);
+setInterval(verificarVersao, 30 * 60 * 1000);
+document.addEventListener('visibilitychange', function () { if (!document.hidden) verificarVersao(); });
 })();
 </script>
 </body>
